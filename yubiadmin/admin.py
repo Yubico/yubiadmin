@@ -33,13 +33,17 @@ class YubiAdmin(object):
     def __init__(self, env):
         self.env = env
         self.apps = {}
-        self.template = env.get_template('app_base.html')
         for app in apps:
             app_data = inspect_app(app)
             self.apps[app_data['name']] = (app, app_data)
+        self.modules = [data for (_, data) in self.apps.values()]
 
     @cherrypy.expose
-    def default(self, module_name, section_name=None, **kwargs):
+    def default(self, module_name=None, section_name=None, **kwargs):
+        if not module_name:
+            tmpl = self.env.get_template('index.html')
+            return tmpl.render(modules=self.modules)
+
         app, module = self.apps[module_name]
         if not section_name:
             section_name = module['sections'][0]['name']
@@ -48,13 +52,19 @@ class YubiAdmin(object):
                                      (module_name, section_name))
         section = next(section for section in module['sections']
                        if section['name'] == section_name)
-        data = {
-            'modules': [data for (_, data) in self.apps.values()],
+
+        data = app.__getattribute__(section_name)(**kwargs)
+        page = tmpl.render(**data)
+
+        data.update({
+            'modules': self.modules,
             'module': module,
             'section': section,
-            'content': render_section(app, section_name, tmpl, **kwargs)
-        }
-        return self.template.render(**data)
+            'title': '%s - %s' % (module_name, section_name),
+            'page': page
+        })
+        tmpl = env.get_template('app_base.html')
+        return tmpl.render(**data)
 
 if __name__ == '__main__':
     cwd = os.path.dirname(__file__)

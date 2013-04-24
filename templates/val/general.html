@@ -1,3 +1,3 @@
-<h2>General settings</h2>
+{% from "forms.html" import render_form %}
 
-<p>This is where general settings go.</p>
+{{ render_form(fieldsets, '/val/general') }}

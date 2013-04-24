@@ -1,7 +1,28 @@
 {% extends "content.html" %}
 
-{% block title %}{{ title }}{% endblock %}
-
 {% block content %}
-{{ content }}
+<div class="navbar">
+	<div class="navbar-inner">
+		<ul class="nav">
+			{% for sect in module.sections %}
+			<li {% if sect.name == section.name %}class="active"{% endif %}>
+			<a href="/{{ module.name }}/{{ sect.name }}">{{ sect.title }}</a>
+			</li>
+			{% endfor %}
+		</ul>
+	</div>
+</div>
+
+{% if errors %}
+<div class="alert alert-error">
+	<p>Errors:</p>
+	<ul>
+		{% for error in errors %}
+		<li>{{ error }}</li>
+		{% endfor %}
+	</ul>
+</div>
+{% endif %}
+
+{{ page }}
 {% endblock %}

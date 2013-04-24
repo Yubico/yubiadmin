@@ -11,23 +11,11 @@ class YubikeyKsm(object):
     """
 
     name = 'ksm'
-    sections = ['general', 'database', 'ksms']
-
-    def general(self):
-        """
-        General
-        """
-        return {}
+    sections = ['database']
 
     def database(self):
         """
         Database Settings
-        """
-        return {}
-
-    def ksms(self):
-        """
-        Key Store Modules
         """
         return {}
 

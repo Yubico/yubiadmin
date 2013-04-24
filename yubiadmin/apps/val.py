@@ -1,27 +1,52 @@
+from wtforms import Form, IntegerField
+
 __all__ = [
     'app'
 ]
 
 
+class MiscForm(Form):
+    legend = 'Misc'
+    default_timeout = IntegerField('Default Timeout')
+
+
+class SyncLevelsForm(Form):
+    legend = 'Sync Levels'
+    sync_default = IntegerField('Default')
+    sync_secure = IntegerField('Secure')
+    sync_fast = IntegerField('Fast')
+
+
 class YubikeyVal(object):
     """
-    YubiKey Validation server
+    YubiKey Validation Server
 
     YubiKey OTP validation server
     """
 
     name = 'val'
-    sections = ['general', 'database', 'ksms']
+    sections = ['general', 'database', 'syncpool', 'ksms']
 
-    def general(self):
+    def general(self, **kwargs):
         """
         General
         """
-        return {}
+        if kwargs:
+            # Save
+            print kwargs
+        return {
+            'fieldsets': [SyncLevelsForm(kwargs), MiscForm(kwargs)]
+        }
 
     def database(self):
         """
         Database Settings
+        """
+        return {}
+
+    def syncpool(self):
+        """
+        Sync pool
         """
         return {}
 

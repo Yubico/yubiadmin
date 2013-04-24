@@ -15,7 +15,7 @@
 				<ul class="nav nav-list">
 					<li class="nav-header">Modules</li>
 					{% for mod in modules %}
-					<li {% if mod.name == module.name %}class="active"{% endif %} >
+					<li {% if module is defined and mod.name == module.name %}class="active"{% endif %} >
 						<a href="/{{ mod.name }}">{{ mod.title }}</a>
 					</li>
 					{% endfor %}
@@ -23,24 +23,10 @@
 			</div>
 		</div>
 		<div class="span9">
-			<div class="navbar">
-				<div class="navbar-inner">
-					<a class="brand" href="#">{{ title }}</a>
-					<ul class="nav">
-						{% for sect in module.sections %}
-						<li {% if sect.name == section.name %}class="active"{% endif %}>
-						<a href="/{{ module.name }}/{{ sect.name }}">{{ sect.title }}</a>
-						</li>
-						{% endfor %}
-					</ul>
-				</div>
-			</div>
-
 			{% block content %}
-			<p>Stuff goes here</p>
 			{% endblock %}
 		</div>
-	</div>
+		</div>
 
 	<hr>
 
