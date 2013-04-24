@@ -13,7 +13,7 @@ class YubikeyKsm(object):
     name = 'ksm'
     sections = ['database']
 
-    def database(self):
+    def database(self, request):
         """
         Database Settings
         """

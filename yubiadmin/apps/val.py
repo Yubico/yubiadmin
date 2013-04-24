@@ -27,30 +27,29 @@ class YubikeyVal(object):
     name = 'val'
     sections = ['general', 'database', 'syncpool', 'ksms']
 
-    def general(self, **kwargs):
+    def general(self, request):
         """
         General
         """
-        if kwargs:
-            # Save
-            print kwargs
+        sync_form = SyncLevelsForm(request.params)
+        misc_form = MiscForm(request.params)
         return {
-            'fieldsets': [SyncLevelsForm(kwargs), MiscForm(kwargs)]
+            'fieldsets': [sync_form, misc_form]
         }
 
-    def database(self):
+    def database(self, request):
         """
         Database Settings
         """
         return {}
 
-    def syncpool(self):
+    def syncpool(self, request):
         """
         Sync pool
         """
         return {}
 
-    def ksms(self):
+    def ksms(self, request):
         """
         Key Store Modules
         """
