@@ -1,55 +1,107 @@
-from wtforms import Form
-from wtforms.fields import StringField, IntegerField
-from wtforms.validators import NumberRange
+from wtforms.fields import StringField, IntegerField, PasswordField
+from wtforms.validators import NumberRange, Optional
+from wtforms.widgets import PasswordInput
+from yubiadmin.util import App, ConfigForm, FileConfig, render
 
 __all__ = [
     'app'
 ]
 
 
-class MiscForm(Form):
-    legend = 'Misc'
-    default_timeout = IntegerField('Default Timeout', [NumberRange(0)],
-                                   default=1)
-
-    def load(self):
-        self.default_timeout.process_data(5)
-
-    def save(self):
-        pass
+def yk_read_str(varname):
+    return r'\$baseParams\[\'__YKVAL_%s__\'\] = [\'"](.*)[\'"];' % varname
 
 
-class SyncLevelsForm(Form):
+def yk_write_str(varname):
+    return lambda x: '$baseParams[\'__YKVAL_%s__\'] = "%s";' % (varname, x)
+
+
+def yk_read_int(varname):
+    return r'\$baseParams\[\'__YKVAL_%s__\'\] = (\d+);' % varname
+
+
+def yk_write_int(varname):
+    return lambda x: '$baseParams[\'__YKVAL_%s__\'] = %s;' % (varname, x)
+
+
+def db_read(varname):
+    return r'\$db%s=\'(.*)\';' % varname
+
+
+def db_write(varname):
+    return lambda x: '$db%s=\'%s\';' % (varname, x)
+
+
+class SyncLevelsForm(ConfigForm):
     legend = 'Sync Levels'
-    sync_default = IntegerField('Default', [NumberRange(1, 100)], default=60)
-    sync_secure = IntegerField('Secure', [NumberRange(1, 100)], default=40)
-    sync_fast = IntegerField('Fast', [NumberRange(1, 100)], default=1)
 
-    def load(self):
-        # TODO: Read config file
-        self.sync_default.process_data(40)
-        self.sync_secure.process_data(51)
-        self.sync_fast.process_data(1)
+    sync_default = IntegerField('Default', [NumberRange(1, 100)])
+    sync_secure = IntegerField('Secure', [NumberRange(1, 100)])
+    sync_fast = IntegerField('Fast', [NumberRange(1, 100)])
 
-    def save(self):
-        # TODO: Save data t config file
-        pass
+    config = FileConfig(
+        '/home/dain/yubico/yubiadmin/ykval-config.php',
+        [
+            (
+                'sync_default',
+                yk_read_int('SYNC_DEFAULT_LEVEL'),
+                yk_write_int('SYNC_DEFAULT_LEVEL'),
+                60
+            ), (
+                'sync_secure',
+                yk_read_int('SYNC_SECURE_LEVEL'),
+                yk_write_int('SYNC_SECURE_LEVEL'),
+                40
+            ), (
+                'sync_fast',
+                yk_read_int('SYNC_FAST_LEVEL'),
+                yk_write_int('SYNC_FAST_LEVEL'),
+                1
+            ),
+
+        ]
+    )
 
 
-class DatabaseForm(Form):
+class MiscForm(ConfigForm):
+    legend = 'Misc'
+    default_timeout = IntegerField('Default Timeout', [NumberRange(0)])
+
+    config = FileConfig(
+        '/home/dain/yubico/yubiadmin/ykval-config.php',
+        [(
+            'default_timeout',
+            yk_read_int('SYNC_DEFAULT_TIMEOUT'),
+            yk_write_int('SYNC_DEFAULT_TIMEOUT'),
+            1
+        )]
+    )
+
+
+class DatabaseForm(ConfigForm):
     legend = 'Database'
-    connection_string = StringField('Connection String', default=1)
-    attrs = {'connection_string': {'class': 'input-xxlarge'}}
+    dbtype = StringField('DB type')
+    dbserver = StringField('Host')
+    dbport = IntegerField('Port', [Optional(), NumberRange(1, 65535)])
+    dbname = StringField('DB name')
+    dbuser = StringField('DB username')
+    dbpass = PasswordField('DB password',
+                           widget=PasswordInput(hide_value=False))
 
-    def load(self):
-        self.connection_string.process_data(
-            'mysql:dbname=ykval;host=127.0.0.1')
+    config = FileConfig(
+        '/home/dain/yubico/yubiadmin/config-db.php',
+        [
+            ('dbtype', db_read('type'), db_write('type'), 'mysql'),
+            ('dbserver', db_read('server'), db_write('server'), 'localhost'),
+            ('dbport', db_read('port'), db_write('port'), ''),
+            ('dbname', db_read('name'), db_write('name'), 'ykval'),
+            ('dbuser', db_read('user'), db_write('user'), 'ykval_verifier'),
+            ('dbpass', db_read('pass'), db_write('pass'), ''),
+        ]
+    )
 
-    def save(self):
-        pass
 
-
-class YubikeyVal(object):
+class YubikeyVal(App):
     """
     YubiKey Validation Server
 
@@ -59,52 +111,28 @@ class YubikeyVal(object):
     name = 'val'
     sections = ['general', 'database', 'syncpool', 'ksms']
 
-    def _populate_forms(self, forms, data):
-        if not data:
-            for form in forms:
-                form.load()
-        else:
-            errors = False
-            for form in forms:
-                form.process(data)
-                errors = form.validate() or errors
-            if not errors:
-                for form in forms:
-                    form.save()
-
     def general(self, request):
         """
         General
         """
-        forms = [
-            SyncLevelsForm(),
-            MiscForm()
-        ]
-
-        self._populate_forms(forms, request.params)
-
-        return {'fieldsets': forms}
+        return self.render_forms(request, [SyncLevelsForm(), MiscForm()])
 
     def database(self, request):
         """
         Database Settings
         """
-        forms = [DatabaseForm()]
-
-        self._populate_forms(forms, request.params)
-
-        return {'fieldsets': forms}
+        return self.render_forms(request, [DatabaseForm()])
 
     def syncpool(self, request):
         """
         Sync pool
         """
-        return {}
+        return render('form', target=request.path)
 
     def ksms(self, request):
         """
         Key Store Modules
         """
-        return {}
+        return render('form', target=request.path)
 
 app = YubikeyVal()

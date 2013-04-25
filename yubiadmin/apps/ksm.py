@@ -17,6 +17,6 @@ class YubikeyKsm(object):
         """
         Database Settings
         """
-        return {}
+        return "Hello world"
 
 app = YubikeyKsm()

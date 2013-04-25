@@ -79,7 +79,7 @@
 {%- macro render_form(fieldsets, action) -%}
 	<form action="{{ action }}" method="post">
 	{% for fieldset in fieldsets %}
-	{{ form_fieldset(fieldset) }}
+		{{ form_fieldset(fieldset) }}
 	{% endfor %}
 	<div class="form-actions">
 		<input type="submit" class="btn btn-primary" value="Save">
@@ -88,3 +88,5 @@
 	</div>
 	</form>
 {%- endmacro -%}
+
+{{ render_form(fieldsets, target) }}

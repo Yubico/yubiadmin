@@ -1,8 +1,8 @@
 import os
 from wsgiref.simple_server import make_server
 from webob.dec import wsgify
-from jinja2 import Environment, FileSystemLoader
 
+from yubiadmin.util import render
 from yubiadmin.apps import apps
 
 
@@ -25,14 +25,8 @@ def inspect_app(app):
     }
 
 
-def render_section(app, section, template, **kwargs):
-    data = app.__getattribute__(section)(**kwargs)
-    return template.render(**data)
-
-
 class YubiAdmin(object):
-    def __init__(self, env):
-        self.env = env
+    def __init__(self):
         self.apps = {}
         for app in apps:
             app_data = inspect_app(app)
@@ -45,38 +39,29 @@ class YubiAdmin(object):
         section_name = request.path_info_pop()
 
         if not module_name:
-            tmpl = self.env.get_template('index.html')
-            return tmpl.render(modules=self.modules)
+            return render('index', modules=self.modules)
 
         app, module = self.apps[module_name]
         if not section_name:
             section_name = module['sections'][0]['name']
 
-        tmpl = self.env.get_template('%s/%s.html' %
-                                     (module_name, section_name))
         section = next(section for section in module['sections']
                        if section['name'] == section_name)
 
-        data = app.__getattribute__(section_name)(request)
-        page = tmpl.render(**data)
-
-        data.update({
-            'modules': self.modules,
-            'module': module,
-            'section': section,
-            'title': '%s - %s' % (module_name, section_name),
-            'page': page
-        })
-        tmpl = env.get_template('app_base.html')
-        return tmpl.render(**data)
+        return render(
+            'app_base',
+            modules=self.modules,
+            module=module,
+            section=section,
+            title='YubiAdmin - %s - %s' % (module_name, section_name),
+            page=app.__getattribute__(section_name)(request)
+        )
 
 cwd = os.path.dirname(__file__)
 base_dir = os.path.abspath(os.path.join(cwd, os.pardir))
 static_dir = os.path.join(base_dir, 'static')
-template_dir = os.path.join(base_dir, 'templates')
-env = Environment(loader=FileSystemLoader(template_dir))
 
-application = YubiAdmin(env)
+application = YubiAdmin()
 
 
 if __name__ == '__main__':
