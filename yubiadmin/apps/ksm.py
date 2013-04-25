@@ -1,9 +1,11 @@
+from yubiadmin.util import App, DBConfigForm
+
 __all__ = [
     'app'
 ]
 
 
-class YubikeyKsm(object):
+class YubikeyKsm(App):
     """
     YubiKey Key Storage Module
 
@@ -17,6 +19,7 @@ class YubikeyKsm(object):
         """
         Database Settings
         """
-        return "Hello world"
+        return self.render_forms(request, [
+            DBConfigForm('/etc/yubico/ksm/config-db.php')])
 
 app = YubikeyKsm()

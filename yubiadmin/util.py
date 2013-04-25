@@ -1,13 +1,16 @@
 import os
 import re
 from UserDict import DictMixin
-from wtforms import Form
+from wtforms import Form, StringField, IntegerField, PasswordField
+from wtforms.widgets import PasswordInput
+from wtforms.validators import Optional, NumberRange
 from jinja2 import Environment, FileSystemLoader
 
 __all__ = [
     'App',
     'FileConfig',
     'ConfigForm',
+    'DBConfigForm',
     'render',
     'populate_forms',
 ]
@@ -72,6 +75,9 @@ class ValueHandler(object):
 
 
 class FileConfig(DictMixin):
+    """
+    Maps key-value pairs to a backing config file.
+    """
     def __init__(self, filename, params=[]):
         self.filename = filename
         self.params = {}
@@ -107,6 +113,9 @@ class FileConfig(DictMixin):
 
 
 class ConfigForm(Form):
+    """
+    Form that can load and save data to a config.
+    """
     config = None
 
     def load(self):
@@ -121,3 +130,41 @@ class ConfigForm(Form):
             if field.id in self.config:
                 self.config[field.id] = field.data
         self.config.commit()
+
+
+def db_read(varname):
+    return r'\$db%s=\'(.*)\';' % varname
+
+
+def db_write(varname):
+    return lambda x: '$db%s=\'%s\';' % (varname, x)
+
+
+class DBConfigForm(ConfigForm):
+    """
+    Complete form for editing a dbconfig-common generated for PHP.
+    """
+    legend = 'Database'
+    dbtype = StringField('DB type')
+    dbserver = StringField('Host')
+    dbport = IntegerField('Port', [Optional(), NumberRange(1, 65535)])
+    dbname = StringField('DB name')
+    dbuser = StringField('DB username')
+    dbpass = PasswordField('DB password',
+                           widget=PasswordInput(hide_value=False))
+
+    config = FileConfig(
+        '/dev/null',
+        [
+            ('dbtype', db_read('type'), db_write('type'), 'mysql'),
+            ('dbserver', db_read('server'), db_write('server'), 'localhost'),
+            ('dbport', db_read('port'), db_write('port'), ''),
+            ('dbname', db_read('name'), db_write('name'), 'ykval'),
+            ('dbuser', db_read('user'), db_write('user'), 'ykval_verifier'),
+            ('dbpass', db_read('pass'), db_write('pass'), ''),
+        ]
+    )
+
+    def __init__(self, filename, *args, **kwargs):
+        self.__class__.config.filename = filename
+        super(DBConfigForm, self).__init__(*args, **kwargs)

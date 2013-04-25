@@ -1,7 +1,6 @@
-from wtforms.fields import StringField, IntegerField, PasswordField
-from wtforms.validators import NumberRange, Optional
-from wtforms.widgets import PasswordInput
-from yubiadmin.util import App, ConfigForm, FileConfig, render
+from wtforms.fields import IntegerField
+from wtforms.validators import NumberRange
+from yubiadmin.util import App, DBConfigForm, ConfigForm, FileConfig
 
 __all__ = [
     'app'
@@ -78,29 +77,6 @@ class MiscForm(ConfigForm):
     )
 
 
-class DatabaseForm(ConfigForm):
-    legend = 'Database'
-    dbtype = StringField('DB type')
-    dbserver = StringField('Host')
-    dbport = IntegerField('Port', [Optional(), NumberRange(1, 65535)])
-    dbname = StringField('DB name')
-    dbuser = StringField('DB username')
-    dbpass = PasswordField('DB password',
-                           widget=PasswordInput(hide_value=False))
-
-    config = FileConfig(
-        '/home/dain/yubico/yubiadmin/config-db.php',
-        [
-            ('dbtype', db_read('type'), db_write('type'), 'mysql'),
-            ('dbserver', db_read('server'), db_write('server'), 'localhost'),
-            ('dbport', db_read('port'), db_write('port'), ''),
-            ('dbname', db_read('name'), db_write('name'), 'ykval'),
-            ('dbuser', db_read('user'), db_write('user'), 'ykval_verifier'),
-            ('dbpass', db_read('pass'), db_write('pass'), ''),
-        ]
-    )
-
-
 class YubikeyVal(App):
     """
     YubiKey Validation Server
@@ -121,18 +97,19 @@ class YubikeyVal(App):
         """
         Database Settings
         """
-        return self.render_forms(request, [DatabaseForm()])
+        return self.render_forms(request, [
+            DBConfigForm('/home/dain/yubico/yubiadmin/config-db.php')])
 
     def syncpool(self, request):
         """
         Sync pool
         """
-        return render('form', target=request.path)
+        return 'Not yet implemented.'
 
     def ksms(self, request):
         """
         Key Store Modules
         """
-        return render('form', target=request.path)
+        return 'Not yet implemented.'
 
 app = YubikeyVal()
