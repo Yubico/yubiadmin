@@ -77,6 +77,7 @@ class ValueHandler(object):
 class FileConfig(DictMixin):
     """
     Maps key-value pairs to a backing config file.
+    You can manually edit the file by modifying self.content.
     """
     def __init__(self, filename, params=[]):
         self.filename = filename
