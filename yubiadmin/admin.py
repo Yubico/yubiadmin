@@ -2,7 +2,7 @@ import os
 from wsgiref.simple_server import make_server
 from webob.dec import wsgify
 
-from yubiadmin.util import render
+from yubiadmin.util.app import render
 from yubiadmin.apps import apps
 
 

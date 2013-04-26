@@ -1,4 +1,5 @@
-from yubiadmin.util import App, DBConfigForm
+from yubiadmin.util.app import App
+from yubiadmin.util.form import DBConfigForm
 
 __all__ = [
     'app'
@@ -19,7 +20,8 @@ class YubikeyKsm(App):
         """
         Database Settings
         """
-        return self.render_forms(request, [
-            DBConfigForm('/etc/yubico/ksm/config-db.php')])
+        dbform = DBConfigForm('/etc/yubico/ksm/config-db.php',
+                              dbname='ykksm', dbuser='ykksmreader')
+        return self.render_forms(request, [dbform])
 
 app = YubikeyKsm()
