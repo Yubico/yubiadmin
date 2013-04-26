@@ -1,2 +1,6 @@
-.ropeproject/
 *.pyc
+*.egg-info
+build/
+dist/
+.ropeproject/
+ChangeLog
