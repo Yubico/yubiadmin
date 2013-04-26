@@ -13,11 +13,10 @@
 
 {%- macro form_field_errors(field) -%}
 	{% if field.errors %}
-	<div>
-		{%- for error in field.errors -%}
-		<span class="label important">{{ error }}</span>
-		{%- endfor -%}
-	</div>
+	{%- for error in field.errors -%}
+	<span class="label label-important">{{ error }}</span>
+	&nbsp;
+	{%- endfor -%}
 	{% endif %}
 {%- endmacro -%}
 
