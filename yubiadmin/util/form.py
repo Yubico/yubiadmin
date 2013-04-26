@@ -1,7 +1,8 @@
-from wtforms import Form, StringField, IntegerField, PasswordField, Field
+from wtforms import (
+    Form, StringField, IntegerField, PasswordField, HiddenField, Field)
 from wtforms.widgets import PasswordInput, TextArea
 from wtforms.validators import Optional, NumberRange
-from yubiadmin.util.config import ValueHandler, FileConfig
+from yubiadmin.util.config import ValueHandler, FileConfig, php_inserter
 
 __all__ = [
     'ListField',
@@ -22,6 +23,18 @@ class ListField(Field):
             return '\n'.join(self.data)
         else:
             return ''
+
+    def validate(self, form, extra_validators=tuple()):
+        self.errors = []
+        success = True
+        field = HiddenField(validators=self.validators, _form=form,
+                            _name='item')
+        for value in self.data:
+            field.data = value
+            if not field.validate(form, extra_validators):
+                success = False
+                self.errors.extend(field.errors)
+        return success
 
 
 class ConfigForm(Form):
@@ -60,7 +73,8 @@ class DBConfigForm(ConfigForm):
     def db_handler(self, varname, default):
         pattern = r'\$%s=\'(.*)\';' % varname
         writer = lambda x: '$%s=\'%s\';' % (varname, x)
-        return ValueHandler(pattern, writer, default=default)
+        return ValueHandler(pattern, writer, inserter=php_inserter,
+                            default=default)
 
     def __init__(self, filename, *args, **kwargs):
         if not self.config:

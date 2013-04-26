@@ -4,16 +4,32 @@ from UserDict import DictMixin
 
 __all__ = [
     'ValueHandler',
-    'FileConfig'
+    'FileConfig',
+    'php_inserter'
 ]
+
+PHP_BLOCKS = re.compile('(?ms)<\?php(.*?)\s*\?>')
+
+
+def php_inserter(content, value):
+    match = PHP_BLOCKS.search(content)
+    if match:
+        content = PHP_BLOCKS.sub(
+            '<?php\g<1>%s?>' % (os.linesep + value + os.linesep), content)
+    else:
+        if content:
+            content += os.linesep
+        content += '<?php%s?>' % (os.linesep + value + os.linesep)
+    return content
 
 
 class ValueHandler(object):
     def __init__(self, pattern, writer, reader=lambda x: x.group(1),
-                 default=None):
+                 inserter=lambda x, y: x + os.linesep + y, default=None):
         self.pattern = re.compile(pattern)
         self.writer = writer
         self.reader = reader
+        self.inserter = inserter
         self.default = default
 
     def read(self, content):
@@ -26,13 +42,17 @@ class ValueHandler(object):
         if value is None:
             value = ''
         if self.pattern.search(content):
-            content = self.pattern.sub(self.writer(value), content, 1)
+            new_content = self.pattern.sub(self.writer(value), content, 1)
+            if self.read(content) == self.read(new_content):
+                #Value remains unchanged, don't re-write it.
+                return content
+            else:
+                return new_content
         else:
-            content += os.linesep + self.writer(value)
-        return content
+            return self.inserter(content, self.writer(value))
 
 
-class FileConfig(DictMixin):
+class FileConfig(DictMixin, object):
     """
     Maps key-value pairs to a backing config file.
     You can manually edit the file by modifying self.content.
@@ -46,10 +66,10 @@ class FileConfig(DictMixin):
     def read(self):
         try:
             with open(self.filename, 'r') as file:
-                self.content = file.read()
+                self.content = unicode(file.read())
         except IOError as e:
             print e
-            self.content = ''
+            self.content = u''
 
     def commit(self):
         with open(self.filename, 'w+') as file:

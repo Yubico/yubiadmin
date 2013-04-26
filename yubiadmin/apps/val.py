@@ -1,9 +1,9 @@
 import re
 import os
 from wtforms.fields import IntegerField
-from wtforms.validators import NumberRange
+from wtforms.validators import NumberRange, IPAddress, URL
 from yubiadmin.util.app import App
-from yubiadmin.util.config import ValueHandler, FileConfig
+from yubiadmin.util.config import ValueHandler, FileConfig, php_inserter
 from yubiadmin.util.form import ConfigForm, DBConfigForm, ListField
 
 __all__ = [
@@ -29,7 +29,7 @@ def yk_write(varname, prefix='', suffix=''):
 
 def yk_handler(varname, default):
     return ValueHandler(yk_pattern(varname), yk_write(varname),
-                        default=default)
+                        inserter=php_inserter, default=default)
 
 
 def strip_quotes(value):
@@ -45,7 +45,7 @@ def strip_comments(value):
 
 def yk_parse_arraystring(value):
     value = strip_comments(value).strip()
-    return [strip_quotes(x) for x in value.split(',')]
+    return filter(None, [strip_quotes(x) for x in value.split(',')])
 
 
 def yk_array_handler(varname):
@@ -54,7 +54,7 @@ def yk_array_handler(varname):
     writer = lambda xs: str_write((',' + os.linesep)
                                   .join(['\t"%s"' % x for x in xs]))
     reader = lambda match: yk_parse_arraystring(match.group(1))
-    return ValueHandler(pattern, writer, reader, [])
+    return ValueHandler(pattern, writer, reader, php_inserter, [])
 
 
 ykval_config = FileConfig(
@@ -67,7 +67,8 @@ ykval_config = FileConfig(
         ('sync_interval', yk_handler('SYNC_INTERVAL', 10)),
         ('resync_timeout', yk_handler('SYNC_RESYNC_TIMEOUT', 30)),
         ('old_limit', yk_handler('SYNC_OLD_LIMIT', 10)),
-        ('sync_pool', yk_array_handler('SYNC_POOL'))
+        ('sync_pool', yk_array_handler('SYNC_POOL')),
+        ('allowed_sync_pool', yk_array_handler('ALLOWED_SYNC_POOL'))
     ]
 )
 
@@ -91,12 +92,16 @@ class MiscForm(ConfigForm):
 class SyncPoolForm(ConfigForm):
     legend = 'Sync Settings'
     config = ykval_config
-    attrs = {'sync_pool': {'rows': 5, 'class': 'input-xlarge'}}
+    attrs = {
+        'sync_pool': {'rows': 5, 'class': 'input-xlarge'},
+        'allowed_sync_pool': {'rows': 5, 'class': 'input-xlarge'}
+    }
 
     sync_interval = IntegerField('Sync Interval', [NumberRange(1)])
     resync_timeout = IntegerField('Resync Timeout', [NumberRange(1)])
     old_limit = IntegerField('Old Limit', [NumberRange(1)])
-    sync_pool = ListField('Servers')
+    sync_pool = ListField('Sync Pool URLs', [URL()])
+    allowed_sync_pool = ListField('Allowed Sync IPs', [IPAddress()])
 
 
 class YubikeyVal(App):
@@ -130,7 +135,6 @@ class YubikeyVal(App):
         sync_pool_form = SyncPoolForm()
         form_page = self.render_forms(request, [sync_pool_form])
 
-        print 'Sync pool: %r' % sync_pool_form.config['sync_pool']
         return form_page
 
     def ksms(self, request):
