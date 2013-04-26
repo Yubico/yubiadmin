@@ -75,11 +75,12 @@ ykval_config = FileConfig(
 
 class SyncLevelsForm(ConfigForm):
     legend = 'Sync Levels'
+    description = 'Percentage of syncing required for pre-defined levels.'
     config = ykval_config
 
-    sync_default = IntegerField('Default', [NumberRange(1, 100)])
-    sync_secure = IntegerField('Secure', [NumberRange(1, 100)])
-    sync_fast = IntegerField('Fast', [NumberRange(1, 100)])
+    sync_default = IntegerField('Default Level', [NumberRange(1, 100)])
+    sync_secure = IntegerField('Secure Level', [NumberRange(1, 100)])
+    sync_fast = IntegerField('Fast Level', [NumberRange(1, 100)])
 
 
 class MiscForm(ConfigForm):
@@ -97,11 +98,18 @@ class SyncPoolForm(ConfigForm):
         'allowed_sync_pool': {'rows': 5, 'class': 'input-xlarge'}
     }
 
-    sync_interval = IntegerField('Sync Interval', [NumberRange(1)])
+    sync_interval = IntegerField(
+        'Sync Interval', [NumberRange(1)],
+        description='How often (in seconds) to sync with other server.')
     resync_timeout = IntegerField('Resync Timeout', [NumberRange(1)])
     old_limit = IntegerField('Old Limit', [NumberRange(1)])
-    sync_pool = ListField('Sync Pool URLs', [URL()])
-    allowed_sync_pool = ListField('Allowed Sync IPs', [IPAddress()])
+    sync_pool = ListField(
+        'Sync Pool URLs', [URL()],
+        description='List of URLs to other servers in the sync pool.')
+    allowed_sync_pool = ListField(
+        'Allowed Sync IPs', [IPAddress()],
+        description='List of IP-addresses of other servers that are ' +
+        'allowed to sync with this server.')
 
 
 class YubikeyVal(App):

@@ -6,3 +6,7 @@ html {
 	overflow: -moz-scrollbars-vertical; 
 	overflow-y: scroll;
 }
+
+label {
+	font-weight: bold;
+}

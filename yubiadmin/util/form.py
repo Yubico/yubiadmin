@@ -62,12 +62,13 @@ class DBConfigForm(ConfigForm):
     Complete form for editing a dbconfig-common generated for PHP.
     """
     legend = 'Database'
-    dbtype = StringField('DB type')
+    description = 'Settings for connecting to the database.'
+    dbtype = StringField('Database type')
     dbserver = StringField('Host')
     dbport = IntegerField('Port', [Optional(), NumberRange(1, 65535)])
-    dbname = StringField('DB name')
-    dbuser = StringField('DB username')
-    dbpass = PasswordField('DB password',
+    dbname = StringField('Database name')
+    dbuser = StringField('Username')
+    dbpass = PasswordField('Password',
                            widget=PasswordInput(hide_value=False))
 
     def db_handler(self, varname, default):
