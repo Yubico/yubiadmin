@@ -1,7 +1,4 @@
-import os
-from wsgiref.simple_server import make_server
 from webob.dec import wsgify
-
 from yubiadmin.util.app import render
 from yubiadmin.apps import apps
 
@@ -57,24 +54,4 @@ class YubiAdmin(object):
             page=app.__getattribute__(section_name)(request)
         )
 
-cwd = os.path.dirname(__file__)
-base_dir = os.path.abspath(os.path.join(cwd, os.pardir))
-static_dir = os.path.join(base_dir, 'static')
-
 application = YubiAdmin()
-
-
-if __name__ == '__main__':
-    from yubiadmin.static import FileApp, DirectoryApp
-    static_app = DirectoryApp(static_dir)
-    favicon_app = FileApp(os.path.join(static_dir, 'favicon.ico'))
-
-    @wsgify
-    def with_static(request):
-        base = request.path_info_peek()
-        if base in ['js', 'css', 'img', 'favicon.ico']:
-            return request.get_response(static_app)
-        return request.get_response(application)
-
-    httpd = make_server('localhost', 8080, with_static)
-    httpd.serve_forever()

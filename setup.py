@@ -40,6 +40,7 @@ setup(
     url='https://github.com/Yubico/yubiadmin',
     license='BSD 2 clause',
     packages=['yubiadmin', 'yubiadmin.apps', 'yubiadmin.util'],
+    scripts=['bin/yubiadmin-server'],
     setup_requires=['nose>=1.0'],
     install_requires=['webob', 'Jinja2', 'WTForms'],
     test_suite='nose.collector',
