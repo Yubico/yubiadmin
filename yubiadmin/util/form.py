@@ -1,4 +1,4 @@
-form wtforms import Form
+from wtforms import Form
 from wtforms.fields import (
     TextField, IntegerField, PasswordField, HiddenField, Field)
 from wtforms.widgets import PasswordInput, TextArea
