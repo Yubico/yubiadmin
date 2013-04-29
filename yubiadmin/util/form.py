@@ -30,6 +30,8 @@ class ListField(Field):
         success = True
         field = HiddenField(validators=self.validators, _form=form,
                             _name='item')
+        if self.data is None:
+            self.data = []
         for value in self.data:
             field.data = value
             if not field.validate(form, extra_validators):

@@ -1,5 +1,6 @@
 import os
 from jinja2 import Environment, FileSystemLoader
+from webob import exc
 
 __all__ = [
     'App',
@@ -38,6 +39,9 @@ class App(object):
     name = None
     sections = []
 
-    def render_forms(self, request, forms, template='form'):
+    def redirect(self, url):
+        raise exc.HTTPSeeOther(location=url)
+
+    def render_forms(self, request, forms, template='form', **kwargs):
         populate_forms(forms, request.params)
-        return render(template, target=request.path, fieldsets=forms)
+        return render(template, target=request.path, fieldsets=forms, **kwargs)

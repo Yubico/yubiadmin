@@ -1,0 +1,27 @@
+{% from 'form.html' import render_form %}
+
+{% if daemon_running %}
+	{% set status_cls = 'label label-success' %}
+	{% set status_txt = 'Running' %}
+	{% set toggle_txt = 'Stop daemon' %}
+	{% set restart_cls = 'btn' %}
+{% else %}
+	{% set status_cls = 'label label-important' %}
+	{% set status_txt = 'Not Running' %}
+	{% set toggle_txt = 'Start daemon' %}
+	{% set restart_cls = 'btn disabled' %}
+	{% set restart_attrs = 'disabled="disabled"' %}
+{% endif %}
+
+<div>
+	<legend>Sync Daemon</legend>
+	<p>
+		Current status: <span class="{{ status_cls }}">{{ status_txt }}</span>
+	</p>
+	<form action="daemon" method="post">
+		<button name="daemon" value="toggle" class="btn">{{ toggle_txt }}</button>
+		<button name="daemon" value="restart" class="{{ restart_cls }}" {{ restart_attrs }}>Restart daemon</button>
+	</form>
+</div>
+
+{{ render_form(fieldsets, target) }}

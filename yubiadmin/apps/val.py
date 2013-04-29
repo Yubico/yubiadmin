@@ -1,5 +1,6 @@
 import re
 import os
+import subprocess
 from wtforms.fields import IntegerField
 from wtforms.validators import NumberRange, IPAddress, URL
 from yubiadmin.util.app import App
@@ -57,8 +58,28 @@ def yk_array_handler(varname):
     return ValueHandler(pattern, writer, reader, php_inserter, [])
 
 
+def run(cmd):
+    p = subprocess.Popen(['sh', '-c', cmd], stdout=subprocess.PIPE)
+    return p.wait(), p.stdout.read()
+
+
+def invoke_rc_d(cmd):
+    if run('which invoke-rd.d')[0] == 0:
+        return run('invoke-rc.d ykval-queue %s' % cmd)
+    else:
+        return run('/etc/init.d/ykval-queue %s' % cmd)
+
+
+def is_daemon_running():
+    return invoke_rc_d('status')[0] == 0
+
+
+def restart_daemon():
+    invoke_rc_d('restart')
+
+
 ykval_config = FileConfig(
-    '/home/dain/yubico/yubiadmin/ykval-config.php',
+    '/etc/yubico/val/ykval-config.php',
     [
         ('sync_default', yk_handler('SYNC_DEFAULT_LEVEL', 60)),
         ('sync_secure', yk_handler('SYNC_SECURE_LEVEL', 40)),
@@ -91,7 +112,7 @@ class MiscForm(ConfigForm):
 
 
 class SyncPoolForm(ConfigForm):
-    legend = 'Sync Settings'
+    legend = 'Daemon Settings'
     config = ykval_config
     attrs = {
         'sync_pool': {'rows': 5, 'class': 'input-xlarge'},
@@ -110,6 +131,11 @@ class SyncPoolForm(ConfigForm):
         'Allowed Sync IPs', [IPAddress()],
         description='List of IP-addresses of other servers that are ' +
         'allowed to sync with this server.')
+
+    def save(self):
+        super(SyncPoolForm, self).save()
+        if is_daemon_running():
+            restart_daemon()
 
 
 class YubikeyVal(App):
@@ -132,18 +158,29 @@ class YubikeyVal(App):
         """
         Database Settings
         """
-        dbform = DBConfigForm('/home/dain/yubico/yubiadmin/config-db.php',
+        dbform = DBConfigForm('/etc/yubico/val/config-db.php',
                               dbname='ykval', dbuser='ykval_verifier')
         return self.render_forms(request, [dbform])
 
     def syncpool(self, request):
         """
-        Sync pool
+        Sync Pool
         """
-        sync_pool_form = SyncPoolForm()
-        form_page = self.render_forms(request, [sync_pool_form])
-
+        form_page = self.render_forms(request, [SyncPoolForm()],
+                                      template='val/syncpool',
+                                      daemon_running=is_daemon_running())
         return form_page
+
+    def daemon(self, request):
+        if request.params['daemon'] == 'toggle':
+            if is_daemon_running():
+                invoke_rc_d('stop')
+            else:
+                invoke_rc_d('start')
+        else:
+            restart_daemon()
+
+        return self.redirect('/%s/syncpool' % self.name)
 
     def ksms(self, request):
         """

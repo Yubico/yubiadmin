@@ -42,8 +42,8 @@ class YubiAdmin(object):
         if not section_name:
             section_name = module['sections'][0]['name']
 
-        section = next(section for section in module['sections']
-                       if section['name'] == section_name)
+        section = next((section for section in module['sections']
+                       if section['name'] == section_name), None)
 
         return render(
             'app_base',
