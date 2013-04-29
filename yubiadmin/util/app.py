@@ -8,7 +8,7 @@ __all__ = [
 ]
 
 cwd = os.path.dirname(__file__)
-base_dir = os.path.abspath(os.path.join(cwd, os.pardir, os.pardir))
+base_dir = os.path.abspath(os.path.join(cwd, os.pardir))
 template_dir = os.path.join(base_dir, 'templates')
 env = Environment(loader=FileSystemLoader(template_dir))
 

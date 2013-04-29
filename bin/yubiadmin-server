@@ -16,7 +16,7 @@ STATIC_ASSETS = ['js', 'css', 'img', 'favicon.ico']
 if __name__ == '__main__':
     # TODO: Take command line args to set port.
     mod_dir = os.path.dirname(server.__file__)
-    base_dir = os.path.abspath(os.path.join(mod_dir, os.pardir))
+    base_dir = os.path.abspath(os.path.join(mod_dir))
     static_dir = os.path.join(base_dir, 'static')
 
     static_app = DirectoryApp(static_dir)

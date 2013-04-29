@@ -32,7 +32,7 @@ from setuptools import setup
 
 setup(
     name='yubiadmin',
-    version='0.0.2',
+    version='0.0.3',
     author='Dain Nilsson',
     author_email='dain@yubico.com',
     maintainer='Yubico Open Source Maintainers',
@@ -40,6 +40,7 @@ setup(
     url='https://github.com/Yubico/yubiadmin',
     license='BSD 2 clause',
     packages=['yubiadmin', 'yubiadmin.apps', 'yubiadmin.util'],
+    include_package_data=True,
     scripts=['bin/yubiadmin-server'],
     setup_requires=['nose>=1.0'],
     install_requires=['webob', 'Jinja2', 'WTForms'],

@@ -1,5 +1,6 @@
-from wtforms import (
-    Form, StringField, IntegerField, PasswordField, HiddenField, Field)
+form wtforms import Form
+from wtforms.fields import (
+    TextField, IntegerField, PasswordField, HiddenField, Field)
 from wtforms.widgets import PasswordInput, TextArea
 from wtforms.validators import Optional, NumberRange
 from yubiadmin.util.config import ValueHandler, FileConfig, php_inserter
@@ -63,11 +64,11 @@ class DBConfigForm(ConfigForm):
     """
     legend = 'Database'
     description = 'Settings for connecting to the database.'
-    dbtype = StringField('Database type')
-    dbserver = StringField('Host')
+    dbtype = TextField('Database type')
+    dbserver = TextField('Host')
     dbport = IntegerField('Port', [Optional(), NumberRange(1, 65535)])
-    dbname = StringField('Database name')
-    dbuser = StringField('Username')
+    dbname = TextField('Database name')
+    dbuser = TextField('Username')
     dbpass = PasswordField('Password',
                            widget=PasswordInput(hide_value=False))
 
