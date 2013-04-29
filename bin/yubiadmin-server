@@ -1,14 +1,20 @@
 #!/usr/bin/python
 
 import os
+import base64
 from wsgiref.simple_server import make_server
 from webob.dec import wsgify
+from webob import exc
 from yubiadmin import server
 from yubiadmin.static import FileApp, DirectoryApp
+from yubiadmin.config import settings
+
+REALM = 'YubiADMIN'
+STATIC_ASSETS = ['js', 'css', 'img', 'favicon.ico']
 
 
 if __name__ == '__main__':
-    #TODO: Take command line args to set port.
+    # TODO: Take command line args to set port.
     mod_dir = os.path.dirname(server.__file__)
     base_dir = os.path.abspath(os.path.join(mod_dir, os.pardir))
     static_dir = os.path.join(base_dir, 'static')
@@ -18,10 +24,19 @@ if __name__ == '__main__':
 
     @wsgify
     def with_static(request):
-        base = request.path_info_peek()
-        if base in ['js', 'css', 'img', 'favicon.ico']:
-            return request.get_response(static_app)
-        return request.get_response(server.application)
+        if request.authorization:
+            _, auth = request.authorization
+            if base64.b64decode(auth) == '%s:%s' % (settings['user'],
+                                                    settings['pass']):
+                base = request.path_info_peek()
+                if base in STATIC_ASSETS:
+                    return request.get_response(static_app)
+                return request.get_response(server.application)
 
-    httpd = make_server('localhost', 8080, with_static)
+        #Deny access
+        response = exc.HTTPUnauthorized()
+        response.www_authenticate = ('Basic', {'realm': REALM})
+        return response
+
+    httpd = make_server(settings['iface'], settings['port'], with_static)
     httpd.serve_forever()
