@@ -1,0 +1,6 @@
+YubiAdmin
+=========
+
+YubiAdmin provides a web based administration interface to several of Yubicos
+services, allowing a user with proper credentials to change configuration in
+an easy to use way, instead of having to manually edit configuration files.
