@@ -31,14 +31,15 @@ import subprocess
 from wtforms.fields import IntegerField
 from wtforms.validators import NumberRange, IPAddress, URL
 from yubiadmin.util.app import App
-from yubiadmin.util.config import ValueHandler, FileConfig, php_inserter
+from yubiadmin.util.config import (RegexHandler, FileConfig, php_inserter,
+                                   parse_block, strip_comments)
 from yubiadmin.util.form import ConfigForm, DBConfigForm, ListField
 
 __all__ = [
     'app'
 ]
 
-COMMENT = re.compile(r'/\*.*?\*/')
+COMMENT = re.compile(r'(?ms)(/\*.*?\*/)|(//[^$]*$)|(#[^$]*$)')
 VALUE = re.compile(r'\s*[\'"](.*)[\'"]\s*')
 
 
@@ -56,7 +57,7 @@ def yk_write(varname, prefix='', suffix=''):
 
 
 def yk_handler(varname, default):
-    return ValueHandler(yk_pattern(varname), yk_write(varname),
+    return RegexHandler(yk_pattern(varname), yk_write(varname),
                         inserter=php_inserter, default=default)
 
 
@@ -67,13 +68,9 @@ def strip_quotes(value):
     return value
 
 
-def strip_comments(value):
-    return COMMENT.sub('', value)
-
-
 def yk_parse_arraystring(value):
-    value = strip_comments(value).strip()
-    return filter(None, [strip_quotes(x) for x in value.split(',')])
+    return filter(None, [strip_quotes(x).strip() for x in strip_comments(value)
+                         .split(',')])
 
 
 def yk_array_handler(varname):
@@ -82,7 +79,43 @@ def yk_array_handler(varname):
     writer = lambda xs: str_write((',' + os.linesep)
                                   .join(['\t"%s"' % x for x in xs]))
     reader = lambda match: yk_parse_arraystring(match.group(1))
-    return ValueHandler(pattern, writer, reader, php_inserter, [])
+    return RegexHandler(pattern, writer, reader, php_inserter, [])
+
+
+QUOTED_STRS = re.compile(r'((?:"[^"]+")|(?:\'[^\']+\'))')
+
+
+class KSMHandler(object):
+    FUNCTION = re.compile(r'function\s+otp2ksmurls\s*\([^)]+\)\s*{')
+
+    def _get_block(self, content):
+        match = self.FUNCTION.search(content)
+        if match:
+            return parse_block(content[match.end():], '{', '}')
+        return None
+
+    def read(self, content):
+        block = self._get_block(content)
+        print block
+        if block:
+            quoted = QUOTED_STRS.findall(strip_comments(block))
+            return [strip_quotes(x) for x in quoted]
+        else:
+            []
+
+    def write(self, content, value):
+        block = self._get_block(content)
+        value = ('function otp2ksmurls($otp, $client) {' + os.linesep +
+                 '\treturn array (' + os.linesep +
+                 os.linesep.join(['\t\t"%s",' % x for x in value]) +
+                 os.linesep + '\t);' + os.linesep + '}')
+        if block:
+            match = self.FUNCTION.search(content)
+            start = content[:match.start()]
+            end = content[match.end() + len(block) + 1:]
+            return start + value + end
+        else:
+            return php_inserter(content, value)
 
 
 def run(cmd):
@@ -116,7 +149,8 @@ ykval_config = FileConfig(
         ('resync_timeout', yk_handler('SYNC_RESYNC_TIMEOUT', 30)),
         ('old_limit', yk_handler('SYNC_OLD_LIMIT', 10)),
         ('sync_pool', yk_array_handler('SYNC_POOL')),
-        ('allowed_sync_pool', yk_array_handler('ALLOWED_SYNC_POOL'))
+        ('allowed_sync_pool', yk_array_handler('ALLOWED_SYNC_POOL')),
+        ('ksm_urls', KSMHandler())
     ]
 )
 
@@ -135,7 +169,8 @@ class MiscForm(ConfigForm):
     legend = 'Misc'
     config = ykval_config
 
-    default_timeout = IntegerField('Default Timeout', [NumberRange(0)])
+    default_timeout = IntegerField('Default Timeout (seconds)',
+                                   [NumberRange(0)])
 
 
 class SyncPoolForm(ConfigForm):
@@ -153,16 +188,38 @@ class SyncPoolForm(ConfigForm):
     old_limit = IntegerField('Old Limit', [NumberRange(1)])
     sync_pool = ListField(
         'Sync Pool URLs', [URL()],
-        description='List of URLs to other servers in the sync pool.')
+        description="""
+        List of URLs to other servers in the sync pool.<br />
+        Example: <code>http://example.com/wsapi/2.0/sync</code>
+        """)
     allowed_sync_pool = ListField(
         'Allowed Sync IPs', [IPAddress()],
-        description='List of IP-addresses of other servers that are ' +
-        'allowed to sync with this server.')
+        description="""
+        List of IP-addresses of other servers that are allowed to sync with
+        this server.<br />
+        Example: <code>10.0.0.1</code>
+        """)
 
     def save(self):
         super(SyncPoolForm, self).save()
         if is_daemon_running():
             restart_daemon()
+
+
+class KSMForm(ConfigForm):
+    legend = 'Key Store Modules'
+    config = ykval_config
+    attrs = {'ksm_urls': {'rows': 5, 'class': 'input-xxlarge'}}
+
+    ksm_urls = ListField(
+        'KSM URLs', [URL()],
+        description="""
+        List of URLs to KSMs.<br />
+        The URLs must be fully qualified, i.e., contain the OTP itself.<br />
+        Example: <code>http://example.com/wsapi/decrypt?otp=$otp</code><br />
+        More advanced OTP to KSM mapping is possible by manually editing the
+        configuration file.
+        """)
 
 
 class YubikeyVal(App):
@@ -213,6 +270,6 @@ class YubikeyVal(App):
         """
         Key Store Modules
         """
-        return 'Not yet implemented.'
+        return self.render_forms(request, [KSMForm()])
 
 app = YubikeyVal()

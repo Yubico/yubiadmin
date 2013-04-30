@@ -30,9 +30,11 @@ import re
 from UserDict import DictMixin
 
 __all__ = [
-    'ValueHandler',
+    'RegexHandler',
     'FileConfig',
-    'php_inserter'
+    'strip_comments',
+    'php_inserter',
+    'parse_block'
 ]
 
 PHP_BLOCKS = re.compile('(?ms)<\?php(.*?)\s*\?>')
@@ -50,9 +52,39 @@ def php_inserter(content, value):
     return content
 
 
-class ValueHandler(object):
+def strip_comments(text):
+    COMMENTS = re.compile(
+        r'#.*?$|//.*?$|/\*.*?\*/|\'(?:\\.|[^\\\'])*\'|"(?:\\.|[^\\"])*"',
+        re.DOTALL | re.MULTILINE
+    )
+
+    def replacer(match):
+        s = match.group(0)
+        if s[0] in ['/', '#']:
+            return ''
+        else:
+            return s
+    return COMMENTS.sub(replacer, text)
+
+
+def parse_block(content, opening='(', closing=')'):
+    level = 0
+    index = 0
+    for c in content:
+        if c == opening:
+            level += 1
+        elif c == closing:
+            level -= 1
+        if level < 0:
+            return content[:index]
+        index += 1
+    return content
+
+
+class RegexHandler(object):
     def __init__(self, pattern, writer, reader=lambda x: x.group(1),
-                 inserter=lambda x, y: x + os.linesep + y, default=None):
+                 inserter=lambda x, y: x + os.linesep + y,
+                 default=None):
         self.pattern = re.compile(pattern)
         self.writer = writer
         self.reader = reader
