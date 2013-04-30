@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#
+
 # Copyright (c) 2013 Yubico AB
 # All rights reserved.
 #
@@ -26,13 +26,12 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-#
 
 from setuptools import setup
 
 setup(
     name='yubiadmin',
-    version='0.0.3',
+    version='0.0.4',
     author='Dain Nilsson',
     author_email='dain@yubico.com',
     maintainer='Yubico Open Source Maintainers',
