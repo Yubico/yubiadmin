@@ -44,11 +44,11 @@ def php_inserter(content, value):
     match = PHP_BLOCKS.search(content)
     if match:
         content = PHP_BLOCKS.sub(
-            '<?php\g<1>%s?>' % (os.linesep + value + os.linesep), content)
+            '<?php\g<1>\n%s\n?>' % (value), content)
     else:
         if content:
             content += os.linesep
-        content += '<?php%s?>' % (os.linesep + value + os.linesep)
+        content += '<?php\n%s\n?>' % (value)
     return content
 
 
@@ -83,7 +83,7 @@ def parse_block(content, opening='(', closing=')'):
 
 class RegexHandler(object):
     def __init__(self, pattern, writer, reader=lambda x: x.group(1),
-                 inserter=lambda x, y: x + os.linesep + y,
+                 inserter=lambda x, y: '%s\n%s' % (x, y),
                  default=None):
         self.pattern = re.compile(pattern)
         self.writer = writer
@@ -132,7 +132,8 @@ class FileConfig(DictMixin, object):
 
     def commit(self):
         with open(self.filename, 'w+') as file:
-            file.write(self.content)
+            #Fix all linebreaks
+            file.write(os.linesep.join(self.content.splitlines()))
 
     def add_param(self, key, handler):
         self.params[key] = handler

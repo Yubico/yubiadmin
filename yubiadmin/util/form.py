@@ -27,7 +27,7 @@
 
 from wtforms import Form
 from wtforms.fields import (
-    TextField, IntegerField, PasswordField, HiddenField, Field)
+    TextField, IntegerField, PasswordField, TextAreaField, HiddenField, Field)
 from wtforms.widgets import PasswordInput, TextArea
 from wtforms.validators import Optional, NumberRange
 from yubiadmin.util.config import RegexHandler, FileConfig, php_inserter
@@ -35,6 +35,7 @@ from yubiadmin.util.config import RegexHandler, FileConfig, php_inserter
 __all__ = [
     'ListField',
     'ConfigForm',
+    'FileForm',
     'DBConfigForm'
 ]
 
@@ -85,6 +86,28 @@ class ConfigForm(Form):
             if field.id in self.config:
                 self.config[field.id] = field.data
         self.config.commit()
+
+
+class FileForm(ConfigForm):
+    """
+    Form that displays the entire content of a file.
+    """
+    content = TextAreaField('File')
+    attrs = {'content': {'class': 'span9 code', 'rows': 25}}
+
+    class Handler(object):
+        def read(self, content):
+            return content
+
+        def write(self, content, value):
+            return value
+
+    def __init__(self, filename, legend=None, description=None, *args,
+                 **kwargs):
+        self.config = FileConfig(filename, [('content', self.Handler())])
+        self.legend = legend
+        self.description = description
+        super(FileForm, self).__init__(*args, **kwargs)
 
 
 class DBConfigForm(ConfigForm):

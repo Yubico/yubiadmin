@@ -26,14 +26,13 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import re
-import os
 import subprocess
 from wtforms.fields import IntegerField
 from wtforms.validators import NumberRange, IPAddress, URL
 from yubiadmin.util.app import App
 from yubiadmin.util.config import (RegexHandler, FileConfig, php_inserter,
                                    parse_block, strip_comments)
-from yubiadmin.util.form import ConfigForm, DBConfigForm, ListField
+from yubiadmin.util.form import ConfigForm, FileForm, DBConfigForm, ListField
 
 __all__ = [
     'app'
@@ -75,9 +74,8 @@ def yk_parse_arraystring(value):
 
 def yk_array_handler(varname):
     pattern = yk_pattern(varname, 'array\(', '\)', 's')
-    str_write = yk_write(varname, 'array(' + os.linesep, os.linesep + ')')
-    writer = lambda xs: str_write((',' + os.linesep)
-                                  .join(['\t"%s"' % x for x in xs]))
+    str_write = yk_write(varname, 'array(\n', '\n)')
+    writer = lambda xs: str_write(',\n'.join(['\t"%s"' % x for x in xs]))
     reader = lambda match: yk_parse_arraystring(match.group(1))
     return RegexHandler(pattern, writer, reader, php_inserter, [])
 
@@ -105,10 +103,10 @@ class KSMHandler(object):
 
     def write(self, content, value):
         block = self._get_block(content)
-        value = ('function otp2ksmurls($otp, $client) {' + os.linesep +
-                 '\treturn array (' + os.linesep +
-                 os.linesep.join(['\t\t"%s",' % x for x in value]) +
-                 os.linesep + '\t);' + os.linesep + '}')
+        value = ('function otp2ksmurls($otp, $client) {\n' +
+                 '\treturn array (\n' +
+                 '\m'.join(['\t\t"%s",' % x for x in value]) +
+                 '\n\t);\n}')
         if block:
             match = self.FUNCTION.search(content)
             start = content[:match.start()]
@@ -235,7 +233,7 @@ class YubikeyVal(App):
     """
 
     name = 'val'
-    sections = ['general', 'database', 'synchronization', 'ksms']
+    sections = ['general', 'database', 'synchronization', 'ksms', 'advanced']
 
     def general(self, request):
         """
@@ -255,10 +253,9 @@ class YubikeyVal(App):
         """
         Synchronization
         """
-        form_page = self.render_forms(request, [DaemonForm(), SyncPoolForm()],
-                                      template='val/synchronization',
-                                      daemon_running=is_daemon_running())
-        return form_page
+        return self.render_forms(request, [DaemonForm(), SyncPoolForm()],
+                                 template='val/synchronization',
+                                 daemon_running=is_daemon_running())
 
     def daemon(self, request):
         if request.params['daemon'] == 'toggle':
@@ -276,5 +273,16 @@ class YubikeyVal(App):
         Key Store Modules
         """
         return self.render_forms(request, [KSMForm()])
+
+    def advanced(self, request):
+        """
+        Advanced
+        """
+        return self.render_forms(request, [
+            FileForm('/etc/yubico/val/ykval-config.php', 'Configuration')
+        ])
+
+    #Pulls the tab to the right:
+    advanced.advanced = True
 
 app = YubikeyVal()

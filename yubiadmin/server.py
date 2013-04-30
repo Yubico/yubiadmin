@@ -38,7 +38,8 @@ def inspect_app(app):
     desc = desc.strip()
     sections = [{
         'name': section,
-        'title': app.__getattribute__(section).__doc__.strip()
+        'title': app.__getattribute__(section).__doc__.strip(),
+        'advanced': hasattr(app.__getattribute__(section), 'advanced')
     } for section in cls.sections]
 
     return {

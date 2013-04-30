@@ -48,3 +48,7 @@ a:hover {
 .btn-primary.active {
 	background-color: #003399 \9;
 }
+
+.code {
+	font-family: Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
+}
