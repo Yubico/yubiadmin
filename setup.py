@@ -31,7 +31,7 @@ from setuptools import setup
 
 setup(
     name='yubiadmin',
-    version='0.0.4',
+    version='0.0.5',
     author='Dain Nilsson',
     author_email='dain@yubico.com',
     maintainer='Yubico Open Source Maintainers',
