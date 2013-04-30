@@ -173,19 +173,24 @@ class MiscForm(ConfigForm):
                                    [NumberRange(0)])
 
 
-class SyncPoolForm(ConfigForm):
+class DaemonForm(ConfigForm):
     legend = 'Daemon Settings'
     config = ykval_config
-    attrs = {
-        'sync_pool': {'rows': 5, 'class': 'input-xlarge'},
-        'allowed_sync_pool': {'rows': 5, 'class': 'input-xlarge'}
-    }
-
     sync_interval = IntegerField(
         'Sync Interval', [NumberRange(1)],
         description='How often (in seconds) to sync with other server.')
     resync_timeout = IntegerField('Resync Timeout', [NumberRange(1)])
     old_limit = IntegerField('Old Limit', [NumberRange(1)])
+
+
+class SyncPoolForm(ConfigForm):
+    legend = 'Sync Pool'
+    config = ykval_config
+    attrs = {
+        'sync_pool': {'rows': 5, 'class': 'input-xxlarge'},
+        'allowed_sync_pool': {'rows': 5, 'class': 'input-xxlarge'}
+    }
+
     sync_pool = ListField(
         'Sync Pool URLs', [URL()],
         description="""
@@ -230,7 +235,7 @@ class YubikeyVal(App):
     """
 
     name = 'val'
-    sections = ['general', 'database', 'syncpool', 'ksms']
+    sections = ['general', 'database', 'synchronization', 'ksms']
 
     def general(self, request):
         """
@@ -246,12 +251,12 @@ class YubikeyVal(App):
                               dbname='ykval', dbuser='ykval_verifier')
         return self.render_forms(request, [dbform])
 
-    def syncpool(self, request):
+    def synchronization(self, request):
         """
-        Sync Pool
+        Synchronization
         """
-        form_page = self.render_forms(request, [SyncPoolForm()],
-                                      template='val/syncpool',
+        form_page = self.render_forms(request, [DaemonForm(), SyncPoolForm()],
+                                      template='val/synchronization',
                                       daemon_running=is_daemon_running())
         return form_page
 
