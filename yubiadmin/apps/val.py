@@ -266,7 +266,7 @@ class YubikeyVal(App):
         else:
             restart_daemon()
 
-        return self.redirect('/%s/syncpool' % self.name)
+        return self.redirect('/%s/synchronization' % self.name)
 
     def ksms(self, request):
         """

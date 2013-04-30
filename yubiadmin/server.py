@@ -25,6 +25,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+from webob import exc
 from webob.dec import wsgify
 from yubiadmin.util.app import render
 from yubiadmin.apps import apps
@@ -66,9 +67,15 @@ class YubiAdmin(object):
         if not module_name:
             return render('index', modules=self.modules)
 
+        if not module_name in self.apps:
+            raise exc.HTTPNotFound
+
         app, module = self.apps[module_name]
         if not section_name:
             section_name = module['sections'][0]['name']
+
+        if not hasattr(app, section_name):
+            raise exc.HTTPNotFound
 
         section = next((section for section in module['sections']
                        if section['name'] == section_name), None)
