@@ -28,7 +28,7 @@
 import os
 import re
 import logging as log
-from UserDict import DictMixin
+from collections import MutableMapping
 
 __all__ = [
     'RegexHandler',
@@ -112,7 +112,7 @@ class RegexHandler(object):
             return self.inserter(content, self.writer(value))
 
 
-class FileConfig(DictMixin, object):
+class FileConfig(MutableMapping):
     """
     Maps key-value pairs to a backing config file.
     You can manually edit the file by modifying self.content.
@@ -138,6 +138,13 @@ class FileConfig(DictMixin, object):
 
     def add_param(self, key, handler):
         self.params[key] = handler
+
+    def __iter__(self):
+        for x in self.mylist:
+            yield x
+
+    def __len__(self):
+        return len(self.mylist)
 
     def __getitem__(self, key):
         return self.params[key].read(self.content)
