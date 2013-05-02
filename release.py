@@ -70,7 +70,7 @@ class release(Command):
         if os.path.isfile('dist/%s.tar.gz.asc' % self.fullname):
             # Signature exists from upload, re-use it:
             sign_opts = ['--output dist/%s.tar.gz.sig' % self.fullname,
-                         '--dearmor dist%s.tar.gz.asc' % self.fullname]
+                         '--dearmor dist/%s.tar.gz.asc' % self.fullname]
         else:
             # No signature, create it:
             sign_opts = ['--detach-sign', 'dist/%s.tar.gz' % self.fullname]
@@ -90,8 +90,12 @@ class release(Command):
     def _publish(self):
         web_repo = os.getenv('YUBICO_GITHUB_REPO')
         if web_repo and os.path.isdir(web_repo):
-            cmd = '%s/publish %s %s dist/%s.tar.gz*' % (
-                web_repo, self.name, self.version, self.fullname)
+            artifacts = [
+                'dist/%s.tar.gz' % self.fullname,
+                'dist/%s.tar.gz.sig' % self.fullname
+            ]
+            cmd = '%s/publish %s %s %s' % (
+                web_repo, self.name, self.version, ' '.join(artifacts))
             if self.execute(os.system, (cmd,)):
                 self.announce("Release published! Don't forget to:", log.INFO)
                 self.announce("    (cd %s && git push)" % web_repo, log.INFO)
