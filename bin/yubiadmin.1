@@ -35,14 +35,25 @@
 yubiadmin - Web interface for configuring Yubico software components.
 .SH SYNOPSIS
 .B yubiadmin
+[\fI--help\fR] [\fI--interface INTERFACE\fR] [\fI--port PORT\fR] [\fI--username USERNAME] [\fI--password PASSWORD]
+
 .SH DESCRIPTION
 Runs the YubiAdmin web server. To be able to read and write the various
 configuration files that the YubiAdmin server exposes, the server is intended
 to be run as root. By default the server can be accessed by pointing a web 
 browser to http://localhost:8080/ on the machine which is running the server,
 using the username: "yubiadmin" and the password: "yubiadmin". These settings
-and many more are available by editing the configuration file.
-
+and many more are available by editing the configuration file, or by using the
+program arguments.
+.HP
+\fB\-\-interface\fR Network interface to listen to.
+.HP
+\fB\-\-port\fR IP port to listen to.
+.HP
+\fB\-\-username\fR Username to use for authentication.
+.HP
+\fB\-\-password\fR Password to use for authentication.
+.PP
 Configuration is read from /etc/yubico/admin/yubiadmin.conf
 .SH BUGS
 Report yubiadmin bugs in

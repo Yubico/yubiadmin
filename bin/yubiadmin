@@ -2,6 +2,7 @@
 
 import os
 import base64
+import argparse
 from wsgiref.simple_server import make_server
 from webob.dec import wsgify
 from webob import exc
@@ -14,7 +15,22 @@ STATIC_ASSETS = ['js', 'css', 'img', 'favicon.ico']
 
 
 if __name__ == '__main__':
-    # TODO: Take command line args to set port.
+    parser = argparse.ArgumentParser(
+        description="",
+        add_help=True,
+        # formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument('--interface', nargs='?', default=settings['iface'],
+                        help='Listening interface')
+    parser.add_argument('--port', nargs='?', default=settings['port'],
+                        help='Listening port')
+    parser.add_argument('--username', nargs='?', default=settings['user'],
+                        help='Username for authentication')
+    parser.add_argument('--password', nargs='?', default=settings['pass'],
+                        help='Password for authentication')
+    args = parser.parse_args()
+    args.port = int(args.port)
+
     mod_dir = os.path.dirname(server.__file__)
     base_dir = os.path.abspath(os.path.join(mod_dir))
     static_dir = os.path.join(base_dir, 'static')
@@ -26,17 +42,17 @@ if __name__ == '__main__':
     def with_static(request):
         if request.authorization:
             _, auth = request.authorization
-            if base64.b64decode(auth) == '%s:%s' % (settings['user'],
-                                                    settings['pass']):
+            if base64.b64decode(auth) == '%s:%s' % (args.username,
+                                                    args.password):
                 base = request.path_info_peek()
                 if base in STATIC_ASSETS:
                     return request.get_response(static_app)
                 return request.get_response(server.application)
 
-        #Deny access
+        # Deny access
         response = exc.HTTPUnauthorized()
         response.www_authenticate = ('Basic', {'realm': REALM})
         return response
 
-    httpd = make_server(settings['iface'], settings['port'], with_static)
+    httpd = make_server(args.interface, args.port, with_static)
     httpd.serve_forever()
