@@ -41,7 +41,7 @@ setup(
     license='BSD 2 clause',
     packages=['yubiadmin', 'yubiadmin.apps', 'yubiadmin.util'],
     include_package_data=True,
-    scripts=['bin/yubiadmin-server'],
+    scripts=['bin/yubiadmin'],
     setup_requires=['nose>=1.0'],
     install_requires=['webob', 'Jinja2', 'WTForms'],
     test_suite='nose.collector',
