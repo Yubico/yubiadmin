@@ -39,8 +39,9 @@ class release(Command):
     description = "create and release a new version"
     user_options = [
         ('keyid', None, "GPG key to sign with"),
-        ('skip-test', None, "skip running the tests"),
+        ('skip-tests', None, "skip running the tests"),
     ]
+    boolean_options = ['skip-tests']
 
     def initialize_options(self):
         self.cwd = None
