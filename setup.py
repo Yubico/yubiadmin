@@ -85,7 +85,7 @@ class release(Command):
         if not verify:
             raise DistutilsSetupError("Error verifying signature!")
 
-        tag_opts = ['-s' '-m ' + fullname, fullname]
+        tag_opts = ['-s', '-m ' + fullname, fullname]
         if self.keyid:
             tag_opts[0] = '-u ' + self.keyid
         self.execute(os.system, ('git tag ' + (' '.join(tag_opts)),))
