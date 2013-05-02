@@ -41,29 +41,47 @@ class release(Command):
     boolean_options = ['skip-tests']
 
     def initialize_options(self):
-        self.cwd = None
         self.keyid = None
         self.skip_tests = 0
 
     def finalize_options(self):
         self.cwd = os.getcwd()
+        self.fullname = self.distribution.get_fullname()
 
-    def run(self):
-        if os.getcwd() != self.cwd:
-            raise DistutilsSetupError("Must be in package root!")
-
+    def _verify_version(self):
         version = self.distribution.get_version()
-        fullname = self.distribution.get_fullname()
-
-        tag_exists = os.system('git tag | grep -q "^%s\$"' % fullname) == 0
-        if tag_exists:
-            raise DistutilsSetupError("Tag '%s' already exists!" % fullname)
-
         with open('NEWS', 'r') as news_file:
             line = news_file.readline()
         now = date.today().strftime('%Y-%m-%d')
         if not re.search(r'Version %s \(released %s\)' % (version, now), line):
             raise DistutilsSetupError("Incorrect date/version in NEWS!")
+
+    def _verify_tag(self):
+        if os.system('git tag | grep -q "^%s\$"' % self.fullname) == 0:
+            raise DistutilsSetupError(
+                "Tag '%s' already exists!" % self.fullname)
+
+    def _sign(self):
+        sign_opts = ['--detach-sign', 'dist/%s.tar.gz' % self.fullname]
+        if self.keyid:
+            sign_opts.insert(1, '--default-key ' + self.keyid)
+        self.execute(os.system, ('gpg ' + (' '.join(sign_opts)),))
+
+        if os.system('gpg --verify dist/%s.tar.gz.sig' % self.fullname) != 0:
+            raise DistutilsSetupError("Error verifying signature!")
+
+    def _tag(self):
+        tag_opts = ['-s', '-m ' + self.fullname, self.fullname]
+        if self.keyid:
+            tag_opts[0] = '-u ' + self.keyid
+        self.execute(os.system, ('git tag ' + (' '.join(tag_opts)),))
+
+    def run(self):
+        if os.getcwd() != self.cwd:
+            raise DistutilsSetupError("Must be in package root!")
+
+        self._verify_version()
+        self._verify_tag()
 
         self.execute(os.system, ('git2cl > ChangeLog',))
 
@@ -73,16 +91,5 @@ class release(Command):
 
         self.run_command('sdist')  # upload --sign --identity keyid
 
-        sign_opts = ['--detach-sign', 'dist/%s.tar.gz' % fullname]
-        if self.keyid:
-            sign_opts.insert(1, '--default-key ' + self.keyid)
-        self.execute(os.system, ('gpg ' + (' '.join(sign_opts)),))
-
-        verify = os.system('gpg --verify dist/%s.tar.gz.sig' % fullname) == 0
-        if not verify:
-            raise DistutilsSetupError("Error verifying signature!")
-
-        tag_opts = ['-s', '-m ' + fullname, fullname]
-        if self.keyid:
-            tag_opts[0] = '-u ' + self.keyid
-        self.execute(os.system, ('git tag ' + (' '.join(tag_opts)),))
+        self._sign()
+        self._tag()
