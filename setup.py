@@ -28,68 +28,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 from setuptools import setup
-from distutils.core import Command
-from distutils.errors import DistutilsSetupError
-import os
-import re
-from datetime import date
-
-
-class release(Command):
-    description = "create and release a new version"
-    user_options = [
-        ('keyid', None, "GPG key to sign with"),
-        ('skip-tests', None, "skip running the tests"),
-    ]
-    boolean_options = ['skip-tests']
-
-    def initialize_options(self):
-        self.cwd = None
-        self.keyid = None
-        self.skip_tests = 0
-
-    def finalize_options(self):
-        self.cwd = os.getcwd()
-
-    def run(self):
-        if os.getcwd() != self.cwd:
-            raise DistutilsSetupError("Must be in package root!")
-
-        version = self.distribution.get_version()
-        fullname = self.distribution.get_fullname()
-
-        tag_exists = os.system('git tag | grep -q "^%s\$"' % fullname) == 0
-        if tag_exists:
-            raise DistutilsSetupError("Tag '%s' already exists!" % fullname)
-
-        with open('NEWS', 'r') as news_file:
-            line = news_file.readline()
-        now = date.today().strftime('%Y-%m-%d')
-        if not re.search(r'Version %s \(released %s\)' % (version, now), line):
-            raise DistutilsSetupError("Incorrect date/version in NEWS!")
-
-        self.execute(os.system, ('git2cl > ChangeLog',))
-
-        if not self.skip_tests:
-            self.run_command('check')
-            self.run_command('test')
-
-        self.run_command('sdist')  # upload --sign --identity keyid
-
-        sign_opts = ['--detach-sign', 'dist/%s.tar.gz' % fullname]
-        if self.keyid:
-            sign_opts.insert(1, '--default-key ' + self.keyid)
-        self.execute(os.system, ('gpg ' + (' '.join(sign_opts)),))
-
-        verify = os.system('gpg --verify dist/%s.tar.gz.sig' % fullname) == 0
-        if not verify:
-            raise DistutilsSetupError("Error verifying signature!")
-
-        tag_opts = ['-s', '-m ' + fullname, fullname]
-        if self.keyid:
-            tag_opts[0] = '-u ' + self.keyid
-        self.execute(os.system, ('git tag ' + (' '.join(tag_opts)),))
-
+from release import release
 
 setup(
     name='yubiadmin',
