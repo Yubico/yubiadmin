@@ -83,9 +83,11 @@ class release(Command):
         if web_repo and os.path.isdir(web_repo):
             cmd = '%s/publish %s %s dist/%s.tar.gz*' % (
                 web_repo, self.name, self.version, self.fullname)
-            self.execute(os.system, (cmd,))
-            self.announce("Release published! Don't forget to:")
-            self.announce("(cd %s && git push)" % web_repo)
+            if self.execute(os.system, (cmd,)):
+                self.announce("Release published! Don't forget to:")
+                self.announce("(cd %s && git push)" % web_repo)
+            else:
+                self.warn("There was a problem publishing the release!")
         else:
             self.warn("YUBICO_GITHUB_REPO not set or invalid!")
             self.warn("This release will not be published!")
@@ -113,5 +115,4 @@ class release(Command):
         self._sign()
         self._tag()
 
-        #Doesn't have page yet.
-        #self._publish()
+        self._publish()
