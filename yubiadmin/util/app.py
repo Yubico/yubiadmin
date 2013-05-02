@@ -68,5 +68,25 @@ class App(object):
         raise exc.HTTPSeeOther(location=url)
 
     def render_forms(self, request, forms, template='form', **kwargs):
-        populate_forms(forms, request.params)
-        return render(template, target=request.path, fieldsets=forms, **kwargs)
+        alert = None
+        if not request.params:
+            for form in forms:
+                form.load()
+        else:
+            errors = False
+            for form in forms:
+                form.process(request.params)
+                errors = not form.validate() or errors
+            if not errors:
+                try:
+                    alert = {'type': 'success', 'title': 'Settings updated!'}
+                    for form in forms:
+                        form.save()
+                except Exception as e:
+                    alert = {'type': 'error', 'title': 'Error:',
+                             'message': str(e)}
+            else:
+                alert = {'type': 'error', 'title': 'Invalid data!'}
+
+        return render(template, target=request.path, fieldsets=forms,
+                      alert=alert, **kwargs)

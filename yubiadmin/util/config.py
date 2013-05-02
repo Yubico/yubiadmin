@@ -27,8 +27,9 @@
 
 import os
 import re
+import errno
 import logging as log
-from collections import MutableMapping
+from collections import MutableMapping, OrderedDict
 
 __all__ = [
     'RegexHandler',
@@ -119,7 +120,7 @@ class FileConfig(MutableMapping):
     """
     def __init__(self, filename, params=[]):
         self.filename = filename
-        self.params = {}
+        self.params = OrderedDict()
         for param in params:
             self.add_param(*param)
 
@@ -130,8 +131,18 @@ class FileConfig(MutableMapping):
         except IOError as e:
             log.error(e)
             self.content = u''
+            #Initialize all params from default values.
+            for key in self.params:
+                self[key] = self[key]
 
     def commit(self):
+        if not os.path.isfile(self.filename):
+            dir = os.path.dirname(self.filename)
+            try:
+                os.makedirs(dir)
+            except OSError as e:
+                if e.errno != errno.EEXIST:
+                    raise e
         with open(self.filename, 'w+') as file:
             #Fix all linebreaks
             file.write(os.linesep.join(self.content.splitlines()))
@@ -140,11 +151,10 @@ class FileConfig(MutableMapping):
         self.params[key] = handler
 
     def __iter__(self):
-        for x in self.mylist:
-            yield x
+        return self.params.__iter__()
 
     def __len__(self):
-        return len(self.mylist)
+        return len(self.params)
 
     def __getitem__(self, key):
         return self.params[key].read(self.content)

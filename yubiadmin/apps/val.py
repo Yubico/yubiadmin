@@ -98,7 +98,7 @@ class KSMHandler(object):
             quoted = QUOTED_STRS.findall(strip_comments(block))
             return [strip_quotes(x) for x in quoted]
         else:
-            []
+            return []
 
     def write(self, content, value):
         block = self._get_block(content)
