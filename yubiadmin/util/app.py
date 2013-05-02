@@ -58,8 +58,6 @@ def populate_forms(forms, data):
         if not errors:
             for form in forms:
                 form.save()
-        else:
-            print 'Errors!'
 
 
 class App(object):

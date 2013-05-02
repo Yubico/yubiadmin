@@ -27,6 +27,7 @@
 
 import os
 import re
+import logging as log
 from UserDict import DictMixin
 
 __all__ = [
@@ -127,7 +128,7 @@ class FileConfig(DictMixin, object):
             with open(self.filename, 'r') as file:
                 self.content = unicode(file.read())
         except IOError as e:
-            print e
+            log.error(e)
             self.content = u''
 
     def commit(self):
