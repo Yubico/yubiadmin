@@ -37,12 +37,14 @@ class release(Command):
     user_options = [
         ('keyid', None, "GPG key to sign with"),
         ('skip-tests', None, "skip running the tests"),
+        ('pypi', None, "publish to pypi"),
     ]
-    boolean_options = ['skip-tests']
+    boolean_options = ['skip-tests', 'pypi']
 
     def initialize_options(self):
         self.keyid = None
         self.skip_tests = 0
+        self.pypi = 0
 
     def finalize_options(self):
         self.cwd = os.getcwd()
@@ -64,9 +66,15 @@ class release(Command):
                 "Tag '%s' already exists!" % self.fullname)
 
     def _sign(self):
-        sign_opts = ['--detach-sign', 'dist/%s.tar.gz' % self.fullname]
-        if self.keyid:
-            sign_opts.insert(1, '--default-key ' + self.keyid)
+        if os.path.isfile('dist/%s.tar.gz.asc' % self.fullname):
+            # Signature exists from upload, re-use it:
+            sign_opts = ['--output dist/%s.tar.gz.sig' % self.fullname,
+                         '--dearmor dist%s.tar.gz.asc' % self.fullname]
+        else:
+            # No signature, create it:
+            sign_opts = ['--detach-sign', 'dist/%s.tar.gz' % self.fullname]
+            if self.keyid:
+                sign_opts.insert(1, '--default-key ' + self.keyid)
         self.execute(os.system, ('gpg ' + (' '.join(sign_opts)),))
 
         if os.system('gpg --verify dist/%s.tar.gz.sig' % self.fullname) != 0:
@@ -103,14 +111,21 @@ class release(Command):
 
         if not self.skip_tests:
             self.run_command('check')
-            #Nosetests calls sys.exit(status)
+            # Nosetests calls sys.exit(status)
             try:
                 self.run_command('nosetests')
             except SystemExit as e:
                 if e.code != 0:
                     raise DistutilsSetupError("There were test failures!")
 
-        self.run_command('sdist')  # upload --sign --identity keyid
+        self.run_command('sdist')
+
+        if self.pypi:
+            cmd_obj = self.distribution.get_command_obj('upload')
+            cmd_obj.sign = True
+            if self.keyid:
+                cmd_obj.identity = self.keyid
+            self.run_command('upload')
 
         self._sign()
         self._tag()
