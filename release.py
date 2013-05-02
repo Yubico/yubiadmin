@@ -47,13 +47,15 @@ class release(Command):
     def finalize_options(self):
         self.cwd = os.getcwd()
         self.fullname = self.distribution.get_fullname()
+        self.name = self.distribution.get_name()
+        self.version = self.distribution.get_version()
 
     def _verify_version(self):
-        version = self.distribution.get_version()
         with open('NEWS', 'r') as news_file:
             line = news_file.readline()
         now = date.today().strftime('%Y-%m-%d')
-        if not re.search(r'Version %s \(released %s\)' % (version, now), line):
+        if not re.search(r'Version %s \(released %s\)' % (self.version, now),
+                         line):
             raise DistutilsSetupError("Incorrect date/version in NEWS!")
 
     def _verify_tag(self):
@@ -76,6 +78,16 @@ class release(Command):
             tag_opts[0] = '-u ' + self.keyid
         self.execute(os.system, ('git tag ' + (' '.join(tag_opts)),))
 
+    def _publish(self):
+        web_repo = os.getenv('YUBICO_GITHUB_REPO')
+        if web_repo and os.path.isdir(web_repo):
+            cmd = '%s/publish %s %s dist/%s.tar.gz*' % (
+                web_repo, self.name, self.version, self.fullname)
+            self.execute(os.system, (cmd,))
+        else:
+            self.warn("YUBICO_GITHUB_REPO not set or invalid!")
+            self.warn("This release will not be published!")
+
     def run(self):
         if os.getcwd() != self.cwd:
             raise DistutilsSetupError("Must be in package root!")
@@ -93,3 +105,6 @@ class release(Command):
 
         self._sign()
         self._tag()
+
+        #Doesn't have page yet.
+        #self._publish()
