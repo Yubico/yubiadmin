@@ -96,7 +96,7 @@ class release(Command):
             ]
             cmd = '%s/publish %s %s %s' % (
                 web_repo, self.name, self.version, ' '.join(artifacts))
-            if self.execute(os.system, (cmd,)):
+            if self.execute(os.system, (cmd,)) == 0:
                 self.announce("Release published! Don't forget to:", log.INFO)
                 self.announce("    (cd %s && git push)" % web_repo, log.INFO)
             else:
