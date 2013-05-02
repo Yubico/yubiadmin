@@ -129,7 +129,7 @@ class FileConfig(DictMixin, object):
                 self.content = unicode(file.read())
         except IOError as e:
             log.error(e)
-            self.content = ''
+            self.content = u''
 
     def commit(self):
         with open(self.filename, 'w+') as file:
