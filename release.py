@@ -101,7 +101,12 @@ class release(Command):
 
         if not self.skip_tests:
             self.run_command('check')
-            self.run_command('test')
+            #Nosetests calls sys.exit(status)
+            try:
+                self.run_command('nosetests')
+            except SystemExit as e:
+                if e.code != 0:
+                    raise DistutilsSetupError("There were test failures!")
 
         self.run_command('sdist')  # upload --sign --identity keyid
 
