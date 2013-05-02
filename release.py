@@ -93,7 +93,7 @@ class release(Command):
                 web_repo, self.name, self.version, self.fullname)
             if self.execute(os.system, (cmd,)):
                 self.announce("Release published! Don't forget to:")
-                self.announce("(cd %s && git push)" % web_repo)
+                self.announce("    (cd %s && git push)" % web_repo)
             else:
                 self.warn("There was a problem publishing the release!")
         else:
@@ -131,3 +131,6 @@ class release(Command):
         self._tag()
 
         self._publish()
+
+        self.announce("Release complete! Don't forget to:")
+        self.announce("    git push && git push --tags")
