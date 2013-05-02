@@ -1,0 +1,57 @@
+.\" Copyright (c) 2013 Yubico AB
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions are
+.\" met:
+.\"
+.\"     * Redistributions of source code must retain the above copyright
+.\"       notice, this list of conditions and the following disclaimer.
+.\"
+.\"     * Redistributions in binary form must reproduce the above
+.\"       copyright notice, this list of conditions and the following
+.\"       disclaimer in the documentation and/or other materials provided
+.\"       with the distribution.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+.\" "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+.\" LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+.\" A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+.\" OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+.\" SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+.\" DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+.\" THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+.\" (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+.\" OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\"
+.\" The following commands are required for all man pages.
+.de URL
+\\$2 \(laURL: \\$1 \(ra\\$3
+..
+.if \n[.g] .mso www.tmac
+.TH yubiadmin "1" "May 2013" "yubiadmin"
+.SH NAME
+yubiadmin - Web interface for configuring Yubico software components.
+.SH SYNOPSIS
+.B yubiadmin
+.SH DESCRIPTION
+Runs the YubiAdmin web server. To be able to read and write the various
+configuration files that the YubiAdmin server exposes, the server is intended
+to be run as root. By default the server can be accessed by pointing a web 
+browser to http://localhost:8080/ on the machine which is running the server,
+using the username: "yubiadmin" and the password: "yubiadmin". These settings
+and many more are available by editing the configuration file.
+
+Configuration is read from /etc/yubico/admin/yubiadmin.conf
+.SH BUGS
+Report yubiadmin bugs in
+.URL "https://github.com/Yubico/yubiadmin/issues" "the issue tracker"
+.SH "SEE ALSO"
+
+The
+.URL "https://github.com/Yubico/yubiadmin" "yubiadmin home page"
+.PP
+YubiKeys can be obtained from
+.URL "http://www.yubico.com/" "Yubico" "."
+
