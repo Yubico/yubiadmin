@@ -1,0 +1,13 @@
+{% from 'form.html' import render_form %}
+
+<div>
+	<legend>YubiAdmin Server</legend>
+	<span class="help-block">
+		For any changes to the settings below to take place, the server needs to be restarted. Note that these settings may change the way you access the server, it is possible to lock yourself out!
+	</span>
+	<form action="restart" method="post">
+		<button class="btn btn-primary">Restart server</button>
+	</form>
+</div>
+
+{{ render_form(fieldsets, target) }}
