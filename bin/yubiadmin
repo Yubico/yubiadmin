@@ -7,7 +7,7 @@ from wsgiref.simple_server import make_server
 from webob.dec import wsgify
 from webob import exc
 from yubiadmin import server
-from yubiadmin.static import FileApp, DirectoryApp
+from yubiadmin.static import DirectoryApp
 from yubiadmin.config import settings
 
 REALM = 'YubiADMIN'
@@ -20,23 +20,24 @@ if __name__ == '__main__':
         add_help=True,
         # formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument('--interface', nargs='?', default=settings['iface'],
-                        help='Listening interface')
-    parser.add_argument('--port', nargs='?', default=settings['port'],
+    parser.add_argument('-i', '--interface', nargs='?',
+                        default=settings['iface'], help='Listening interface')
+    parser.add_argument('-p', '--port', nargs='?', default=settings['port'],
                         help='Listening port')
-    parser.add_argument('--username', nargs='?', default=settings['user'],
+    parser.add_argument('-U', '--username', nargs='?',
+                        default=settings['user'],
                         help='Username for authentication')
-    parser.add_argument('--password', nargs='?', default=settings['pass'],
+    parser.add_argument('-P', '--password', nargs='?',
+                        default=settings['pass'],
                         help='Password for authentication')
     args = parser.parse_args()
     args.port = int(args.port)
 
-    mod_dir = os.path.dirname(server.__file__)
-    base_dir = os.path.abspath(os.path.join(mod_dir))
+    module_dir = os.path.dirname(server.__file__)
+    base_dir = os.path.abspath(module_dir)
     static_dir = os.path.join(base_dir, 'static')
 
     static_app = DirectoryApp(static_dir)
-    favicon_app = FileApp(os.path.join(static_dir, 'favicon.ico'))
 
     @wsgify
     def with_static(request):
