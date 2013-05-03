@@ -27,33 +27,34 @@
 
 from webob import exc
 from webob.dec import wsgify
+from collections import OrderedDict
 from yubiadmin.util.app import render
 from yubiadmin.apps import apps
 
 
 def inspect_app(app):
     cls = app.__class__
-    name = cls.name
     doc = app.__doc__.strip()
     title, desc = doc.split('\n', 1)
     desc = desc.strip()
     sections = [{
         'name': section,
-        'title': app.__getattribute__(section).__doc__.strip(),
-        'advanced': hasattr(app.__getattribute__(section), 'advanced')
+        'title': getattr(app, section).__doc__.strip(),
+        'advanced': bool(getattr(getattr(app, section), 'advanced', False))
     } for section in cls.sections]
 
     return {
-        'name': name,
+        'name': cls.name,
         'title': title,
         'description': desc,
         'sections': sections,
+        'disabled': bool(getattr(app, 'disabled', False))
     }
 
 
 class YubiAdmin(object):
     def __init__(self):
-        self.apps = {}
+        self.apps = OrderedDict()
         for app in apps:
             app_data = inspect_app(app)
             self.apps[app_data['name']] = (app, app_data)
@@ -73,6 +74,7 @@ class YubiAdmin(object):
         app, module = self.apps[module_name]
         if not section_name:
             section_name = module['sections'][0]['name']
+            raise exc.HTTPSeeOther(location=request.path + '/' + section_name)
 
         if not hasattr(app, section_name):
             raise exc.HTTPNotFound
@@ -86,7 +88,7 @@ class YubiAdmin(object):
             module=module,
             section=section,
             title='YubiAdmin - %s - %s' % (module_name, section_name),
-            page=app.__getattribute__(section_name)(request)
+            page=getattr(app, section_name)(request)
         )
 
 application = YubiAdmin()

@@ -4,17 +4,8 @@
 <div class="container">
 
 	<div class="row">
-		<div class="span3">
+		<div class="span12">
 			<h1>YubiADMIN</h1>
-		</div>
-		<div class="span9">
-			{% if alert %}
-			<div class="alert alert-{{ alert.type }}">
-				<button type="button" class="close" data-dismiss="alert">&times;</button>
-				<strong>{{ alert.title }}</strong>
-				{{ alert.message }}
-			</div>
-			{% endif %}
 		</div>
 	</div>
 	
@@ -23,11 +14,21 @@
 			<div class="well">
 				<ul class="nav nav-list">
 					<li class="nav-header">Modules</li>
-					{% for mod in modules %}
+					{% for mod in modules if not mod.disabled %}
 					<li {% if module is defined and mod.name == module.name %}class="active"{% endif %} >
 						<a href="/{{ mod.name }}">{{ mod.title }}</a>
 					</li>
 					{% endfor %}
+
+					{% for mod in modules if mod.disabled %}
+					{% if loop.first %}
+					<li class="nav-header">Not installed</li>
+					{% endif %}
+					<li>
+						<a class="disabled">{{ mod.title }}</a>
+					</li>
+					{% endfor %}
+
 				</ul>
 			</div>
 		</div>

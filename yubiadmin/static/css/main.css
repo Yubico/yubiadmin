@@ -21,6 +21,10 @@ a:hover {
 	background-color: #8bc53f;
 }
 
+a.disabled, a.disabled:hover {
+	color: #999999;
+}
+
 .btn-primary {
 	background-color: #9edb48;
 	color: #ffffff;

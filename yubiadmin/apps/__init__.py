@@ -37,3 +37,4 @@ for filename in os.listdir(os.path.dirname(__file__)):
         __all__.append(module)
         if hasattr(module, 'app'):
             apps.append(module.app)
+apps.sort(key=lambda app: (app.priority, app.name))

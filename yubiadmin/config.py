@@ -49,10 +49,8 @@ VALUES = {
 
 def parse(conf, settings={}):
     for confkey, settingskey in VALUES.items():
-        try:
-            settings[settingskey] = conf.__getattribute__(confkey)
-        except AttributeError:
-            pass
+        if hasattr(conf, confkey):
+            settings[settingskey] = getattr(conf, confkey)
     return settings
 
 

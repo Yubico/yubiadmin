@@ -26,20 +26,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import re
-import subprocess
 from wtforms.fields import IntegerField
 from wtforms.validators import NumberRange, IPAddress, URL
 from yubiadmin.util.app import App
 from yubiadmin.util.config import (RegexHandler, FileConfig, php_inserter,
-                                   parse_block, strip_comments)
+                                   parse_block, strip_comments, strip_quotes)
 from yubiadmin.util.form import ConfigForm, FileForm, DBConfigForm, ListField
+from yubiadmin.util.system import invoke_rc_d
 
 __all__ = [
     'app'
 ]
-
-COMMENT = re.compile(r'(?ms)(/\*.*?\*/)|(//[^$]*$)|(#[^$]*$)')
-VALUE = re.compile(r'\s*[\'"](.*)[\'"]\s*')
 
 
 def yk_pattern(varname, prefix='', suffix='', flags=None):
@@ -58,13 +55,6 @@ def yk_write(varname, prefix='', suffix=''):
 def yk_handler(varname, default):
     return RegexHandler(yk_pattern(varname), yk_write(varname),
                         inserter=php_inserter, default=default)
-
-
-def strip_quotes(value):
-    match = VALUE.match(value)
-    if match:
-        return match.group(1)
-    return value
 
 
 def yk_parse_arraystring(value):
@@ -115,24 +105,8 @@ class KSMHandler(object):
             return php_inserter(content, value)
 
 
-def run(cmd):
-    p = subprocess.Popen(['sh', '-c', cmd], stdout=subprocess.PIPE)
-    return p.wait(), p.stdout.read()
-
-
-def invoke_rc_d(cmd):
-    if run('which invoke-rd.d')[0] == 0:
-        return run('invoke-rc.d ykval-queue %s' % cmd)
-    else:
-        return run('/etc/init.d/ykval-queue %s' % cmd)
-
-
 def is_daemon_running():
-    return invoke_rc_d('status')[0] == 0
-
-
-def restart_daemon():
-    invoke_rc_d('restart')
+    return invoke_rc_d('ykval-queue', 'status')[0] == 0
 
 
 ykval_config = FileConfig(
@@ -205,7 +179,7 @@ class SyncPoolForm(ConfigForm):
     def save(self):
         super(SyncPoolForm, self).save()
         if is_daemon_running():
-            restart_daemon()
+            invoke_rc_d('ykval-queue', 'restart')
 
 
 class KSMForm(ConfigForm):
@@ -259,11 +233,11 @@ class YubikeyVal(App):
     def daemon(self, request):
         if request.params['daemon'] == 'toggle':
             if is_daemon_running():
-                invoke_rc_d('stop')
+                invoke_rc_d('ykval-queue', 'stop')
             else:
-                invoke_rc_d('start')
+                invoke_rc_d('ykval-queue', 'start')
         else:
-            restart_daemon()
+            invoke_rc_d('ykval-queue', 'restart')
 
         return self.redirect('/%s/synchronization' % self.name)
 

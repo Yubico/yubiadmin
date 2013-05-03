@@ -63,6 +63,7 @@ def populate_forms(forms, data):
 class App(object):
     name = None
     sections = []
+    priority = 50
 
     def redirect(self, url):
         raise exc.HTTPSeeOther(location=url)

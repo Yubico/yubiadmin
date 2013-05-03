@@ -36,10 +36,16 @@ __all__ = [
     'FileConfig',
     'strip_comments',
     'php_inserter',
-    'parse_block'
+    'parse_block',
+    'parse_value'
 ]
 
 PHP_BLOCKS = re.compile('(?ms)<\?php(.*?)\s*\?>')
+QUOTED_STR = re.compile(r'\s*[\'"](.*)[\'"]\s*')
+COMMENTS = re.compile(
+    r'#.*?$|//.*?$|/\*.*?\*/|\'(?:\\.|[^\\\'])*\'|"(?:\\.|[^\\"])*"',
+    re.DOTALL | re.MULTILINE
+)
 
 
 def php_inserter(content, value):
@@ -55,11 +61,6 @@ def php_inserter(content, value):
 
 
 def strip_comments(text):
-    COMMENTS = re.compile(
-        r'#.*?$|//.*?$|/\*.*?\*/|\'(?:\\.|[^\\\'])*\'|"(?:\\.|[^\\"])*"',
-        re.DOTALL | re.MULTILINE
-    )
-
     def replacer(match):
         s = match.group(0)
         if s[0] in ['/', '#']:
@@ -67,6 +68,13 @@ def strip_comments(text):
         else:
             return s
     return COMMENTS.sub(replacer, text)
+
+
+def strip_quotes(value):
+    match = QUOTED_STR.match(value)
+    if match:
+        return match.group(1)
+    return value
 
 
 def parse_block(content, opening='(', closing=')'):
@@ -81,6 +89,18 @@ def parse_block(content, opening='(', closing=')'):
             return content[:index]
         index += 1
     return content
+
+
+def parse_value(valrepr):
+    try:
+        return int(valrepr)
+    except ValueError:
+        pass
+    try:
+        return float(valrepr)
+    except ValueError:
+        pass
+    return strip_quotes(valrepr)
 
 
 class RegexHandler(object):
