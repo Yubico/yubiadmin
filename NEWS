@@ -1,3 +1,9 @@
-* Version 0.0.8 (released 2013-05-02)
+* Version 0.0.8 (released 2013-05-03)
+
+  * Added configuration of YubiAdmin itself.
+
+  * Added command line arguments to the yubiadmin server.
+
+* Version 0.0.7 (released 2013-05-02)
 
   * Initial release!
