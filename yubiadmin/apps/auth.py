@@ -49,6 +49,8 @@ auth_config = FileConfig(
         ('allow_empty', python_handler('ALLOW_EMPTY_PASSWORDS', False)),
         ('security_level', python_handler('SECURITY_LEVEL', 1)),
         ('yubikey_id', python_handler('YUBIKEY_IDENTIFICATION', False)),
+        ('use_hsm', python_handler('USE_HSM', False)),
+        ('hsm_device', python_handler('YHSM_DEVICE', 'yhsm://localhost:5348')),
     ]
 )
 
@@ -98,6 +100,18 @@ class SecurityForm(ConfigForm):
     )
 
 
+class HSMForm(ConfigForm):
+    legend = 'YubiHSM'
+    description = 'Settings for the YubiHSM hardware device'
+    config = auth_config
+
+    use_hsm = BooleanField(
+        'Use a YubiHSM',
+        description='Check this if you have a YubiHSM to be used by YubiAuth.'
+    )
+    hsm_device = TextField('YubiHSM device')
+
+
 class YubiAuth(App):
     """
     YubiAuth
@@ -112,8 +126,7 @@ class YubiAuth(App):
         """
         General
         """
-        return self.render_forms(request,
-                                 [SecurityForm()])
+        return self.render_forms(request, [SecurityForm(), HSMForm()])
 
     def advanced(self, request):
         """
@@ -123,7 +136,7 @@ class YubiAuth(App):
             FileForm(AUTH_CONFIG_FILE, 'Configuration')
         ])
 
-    #Pulls the tab to the right:
+    # Pulls the tab to the right:
     advanced.advanced = True
 
 
