@@ -36,6 +36,7 @@ __all__ = [
     'FileConfig',
     'strip_comments',
     'php_inserter',
+    'python_handler',
     'parse_block',
     'parse_value'
 ]
@@ -58,6 +59,14 @@ def php_inserter(content, value):
             content += os.linesep
         content += '<?php\n%s\n?>' % (value)
     return content
+
+
+def python_handler(varname, default):
+    pattern = r'(?sm)^\s*%s\s*=\s*(.*?)\s*$' % varname
+    reader = lambda match: parse_value(match.group(1))
+    writer = lambda x: '%s = %r' % (varname, str(x) if isinstance(x, unicode)
+                                    else x)
+    return RegexHandler(pattern, writer, reader, default=default)
 
 
 def strip_comments(text):
@@ -100,6 +109,13 @@ def parse_value(valrepr):
         return float(valrepr)
     except ValueError:
         pass
+    val_lower = valrepr.lower()
+    if val_lower == 'true':
+        return True
+    elif val_lower == 'false':
+        return False
+    elif val_lower in ['none', 'null']:
+        return None
     return strip_quotes(valrepr)
 
 

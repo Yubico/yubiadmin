@@ -11,6 +11,10 @@ label {
 	font-weight: bold;
 }
 
+.input>span.help-block {
+	white-space: pre-line;
+}
+
 a {
 	color: #8bc53f;
 }

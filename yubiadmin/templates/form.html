@@ -7,7 +7,7 @@
 
 {%- macro form_field_description(field) -%}
 	{% if field.description %}
-		<span class="help-block">{{ field.description }}</span>
+		<span class="help-block">{{ field.description|trim }}</span>
 	{% endif %}
 {%- endmacro -%}
 
@@ -22,12 +22,12 @@
 
 {%- macro form_field_boolean(field) -%}
 	<div class="input">
-		<label>
+		<label class="checkbox">
 			{{ field(**kwargs) }}
 			<span>{{ field.label.text }}</span>
-			{{ form_field_description(field) }}
-			{{ form_field_errors(field) }}
 		</label>
+		{{ form_field_description(field) }}
+		{{ form_field_errors(field) }}
 	</div>
 {%- endmacro -%}
 
@@ -62,7 +62,7 @@
 		<legend>{{ fieldset.legend }}</legend>
 	{% endif %}
 	{% if fieldset.description %}
-		<p>{{ fieldset.description }}</p>
+		<p>{{ fieldset.description|trim }}</p>
 	{% endif %}
 	{% for field in fieldset %}
 		{% if field.type == 'HiddenField' %}

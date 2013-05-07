@@ -39,6 +39,9 @@ __all__ = [
 ]
 
 
+YKVAL_CONFIG_FILE = '/etc/yubico/val/ykval-config.php'
+
+
 def yk_pattern(varname, prefix='', suffix='', flags=None):
     regex = r'(?m)^(?!#)\$baseParams\[\'__YKVAL_%s__\'\]\s*=' \
             '\s*%s(.*?)%s\s*;\s*$' % (varname, prefix, suffix)
@@ -110,7 +113,7 @@ def is_daemon_running():
 
 
 ykval_config = FileConfig(
-    '/etc/yubico/val/ykval-config.php',
+    YKVAL_CONFIG_FILE,
     [
         ('sync_default', yk_handler('SYNC_DEFAULT_LEVEL', 60)),
         ('sync_secure', yk_handler('SYNC_SECURE_LEVEL', 40)),
@@ -252,7 +255,7 @@ class YubikeyVal(App):
         Advanced
         """
         return self.render_forms(request, [
-            FileForm('/etc/yubico/val/ykval-config.php', 'Configuration')
+            FileForm(YKVAL_CONFIG_FILE, 'Configuration')
         ])
 
     #Pulls the tab to the right:

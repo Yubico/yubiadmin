@@ -29,21 +29,13 @@ from wtforms.fields import IntegerField, TextField, PasswordField
 from wtforms.widgets import PasswordInput
 from wtforms.validators import NumberRange, IPAddress
 from yubiadmin.util.app import App
-from yubiadmin.util.config import RegexHandler, FileConfig, parse_value
+from yubiadmin.util.config import python_handler, FileConfig
 from yubiadmin.util.form import ConfigForm
 from yubiadmin.util.system import invoke_rc_d
 
 __all__ = [
     'app'
 ]
-
-
-def python_handler(varname, default):
-    pattern = r'(?sm)^\s*%s\s*=\s*(.*?)\s*$' % varname
-    reader = lambda match: parse_value(match.group(1))
-    writer = lambda x: '%s = %r' % (varname, str(x) if isinstance(x, unicode)
-                                    else x)
-    return RegexHandler(pattern, writer, reader, default=default)
 
 
 admin_config = FileConfig(
@@ -97,6 +89,7 @@ class YubiAdmin(App):
 
     def restart(self, request):
         invoke_rc_d('yubiadmin', 'restart')
+        #We'll never get here, the user is unfortunately left with no response
         return self.redirect('/%s/general' % self.name)
 
 
