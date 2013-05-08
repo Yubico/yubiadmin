@@ -1,5 +1,7 @@
 * Verison 0.0.9 (unreleased)
 
+  * Added YubiAuth app.
+
 * Version 0.0.8 (released 2013-05-03)
 
   * Added configuration of YubiAdmin itself.
