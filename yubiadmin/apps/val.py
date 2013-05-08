@@ -97,7 +97,7 @@ class KSMHandler(object):
         block = self._get_block(content)
         value = ('function otp2ksmurls($otp, $client) {\n' +
                  '\treturn array (\n' +
-                 '\m'.join(['\t\t"%s",' % x for x in value]) +
+                 '\n'.join(['\t\t"%s",' % x for x in value]) +
                  '\n\t);\n}')
         if block:
             match = self.FUNCTION.search(content)

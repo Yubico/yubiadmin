@@ -25,23 +25,33 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from wtforms.fields import SelectField, TextField, PasswordField, BooleanField
+from wtforms.fields import (SelectField, TextField, PasswordField,
+                            BooleanField, IntegerField)
 from wtforms.widgets import PasswordInput
-from wtforms.validators import NumberRange, IPAddress
+from wtforms.validators import NumberRange, URL
 from yubiadmin.util.app import App
-from yubiadmin.util.config import python_handler, FileConfig
-from yubiadmin.util.form import ConfigForm, FileForm
+from yubiadmin.util.config import (python_handler, python_list_handler,
+                                   FileConfig)
+from yubiadmin.util.form import ConfigForm, FileForm, ListField
 
 __all__ = [
     'app'
 ]
 
 AUTH_CONFIG_FILE = '/etc/yubico/auth/yubiauth.conf'
+YKVAL_SERVERS = [
+    'https://api.yubico.com/wsapi/2.0/verify',
+    'https://api2.yubico.com/wsapi/2.0/verify',
+    'https://api3.yubico.com/wsapi/2.0/verify',
+    'https://api4.yubico.com/wsapi/2.0/verify',
+    'https://api5.yubico.com/wsapi/2.0/verify'
+]
 
 
 auth_config = FileConfig(
     AUTH_CONFIG_FILE,
     [
+        ('server_list', python_list_handler('YKVAL_SERVERS', YKVAL_SERVERS)),
         ('client_id', python_handler('YKVAL_CLIENT_ID', 11004)),
         ('client_secret', python_handler('YKVAL_CLIENT_SECRET',
                                          '5Vm3Zp2mUTQHMo1DeG9tdojpc1Y=')),
@@ -112,6 +122,25 @@ class HSMForm(ConfigForm):
     hsm_device = TextField('YubiHSM device')
 
 
+class ValidationServerForm(ConfigForm):
+    legend = 'Validation Servers'
+    description = 'Configure servers used for YubiKey OTP validation'
+    config = auth_config
+    attrs = {
+        'client_secret': {'class': 'input-xxlarge'},
+        'server_list': {'rows': 5, 'class': 'input-xxlarge'}
+    }
+
+    client_id = IntegerField('Client ID', [NumberRange(0)])
+    client_secret = TextField('API key')
+    server_list = ListField(
+        'Validation Server URLs', [URL()],
+        description="""
+        List of URLs to YubiKey validation servers.
+        Example: <code>http://example.com/wsapi/2.0/verify</code>
+        """)
+
+
 class YubiAuth(App):
     """
     YubiAuth
@@ -120,13 +149,19 @@ class YubiAuth(App):
     """
 
     name = 'auth'
-    sections = ['general', 'advanced']
+    sections = ['general', 'validation', 'advanced']
 
     def general(self, request):
         """
         General
         """
         return self.render_forms(request, [SecurityForm(), HSMForm()])
+
+    def validation(self, request):
+        """
+        Validation Server(s)
+        """
+        return self.render_forms(request, [ValidationServerForm()])
 
     def advanced(self, request):
         """

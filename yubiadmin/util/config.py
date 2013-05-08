@@ -28,6 +28,7 @@
 import os
 import re
 import errno
+import csv
 import logging as log
 from collections import MutableMapping, OrderedDict
 
@@ -37,6 +38,7 @@ __all__ = [
     'strip_comments',
     'php_inserter',
     'python_handler',
+    'python_list_handler',
     'parse_block',
     'parse_value'
 ]
@@ -69,7 +71,42 @@ def python_handler(varname, default):
     return RegexHandler(pattern, writer, reader, default=default)
 
 
-def strip_comments(text):
+class python_list_handler:
+    def __init__(self, varname, default):
+        self.pattern = re.compile(r'(?m)^\s*%s\s*=\s*\[' % varname)
+        self.varname = varname
+        self.default = default
+
+    def _get_block(self, content):
+        match = self.pattern.search(content)
+        if match:
+            return parse_block(content[match.end():], '[', ']')
+        return None
+
+    def read(self, content):
+        block = self._get_block(content)
+        if block:
+            block = re.sub(r'(?m)\s+', '', block)
+            parts = next(csv.reader([block], skipinitialspace=True), [])
+            return [strip_quotes(x) for x in parts]
+        else:
+            return self.default
+
+    def write(self, content, value):
+        block = self._get_block(content)
+        value = ('%s = [\n' % self.varname +
+                 '\n'.join(['    "%s",' % x for x in value]) +
+                 '\n]')
+        if block:
+            match = self.pattern.search(content)
+            start = content[:match.start()]
+            end = content[match.end() + len(block) + 1:]
+            return start + value + end
+        else:
+            return '%s\n%s' % (content, value)
+
+
+def strip_comments(text, ):
     def replacer(match):
         s = match.group(0)
         if s[0] in ['/', '#']:
