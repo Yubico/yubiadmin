@@ -7,9 +7,16 @@
 		<span class="label label-warning">WARNING</span> <strong>These settings may change the way you access the server, it is possible to lock yourself out!</strong>
 	</span>
 	<br />
-	<form action="restart" method="post">
+	<form action="restart" method="post" onsubmit="return restart_submit();">
 		<button class="btn btn-danger">Restart server</button>
 	</form>
+	<script>
+		function restart_submit(e) {
+			$.get('restart');
+			setTimeout('location.reload();', 1000);
+			return false;
+		}
+	</script>
 </div>
 
 {{ render_form(fieldsets, target) }}

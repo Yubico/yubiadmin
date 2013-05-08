@@ -25,6 +25,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+from threading import Timer
 from wtforms.fields import IntegerField, TextField, PasswordField
 from wtforms.widgets import PasswordInput
 from wtforms.validators import NumberRange, IPAddress
@@ -88,8 +89,8 @@ class YubiAdmin(App):
                                  template='admin/general')
 
     def restart(self, request):
-        invoke_rc_d('yubiadmin', 'restart')
-        #We'll never get here, the user is unfortunately left with no response
+        timer = Timer(1, invoke_rc_d, args=('yubiadmin', 'restart'))
+        timer.start()
         return self.redirect('/%s/general' % self.name)
 
 
