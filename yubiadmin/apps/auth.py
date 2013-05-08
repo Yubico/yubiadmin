@@ -25,9 +25,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from wtforms.fields import (SelectField, TextField, PasswordField,
-                            BooleanField, IntegerField)
-from wtforms.widgets import PasswordInput
+from wtforms.fields import SelectField, TextField, BooleanField, IntegerField
 from wtforms.validators import NumberRange, URL
 from yubiadmin.util.app import App
 from yubiadmin.util.config import (python_handler, python_list_handler,
@@ -61,6 +59,8 @@ auth_config = FileConfig(
         ('yubikey_id', python_handler('YUBIKEY_IDENTIFICATION', False)),
         ('use_hsm', python_handler('USE_HSM', False)),
         ('hsm_device', python_handler('YHSM_DEVICE', 'yhsm://localhost:5348')),
+        ('db_config', python_handler('DATABASE_CONFIGURATION',
+                                     'sqlite:///:memory:')),
     ]
 )
 
@@ -122,6 +122,24 @@ class HSMForm(ConfigForm):
     hsm_device = TextField('YubiHSM device')
 
 
+class DatabaseForm(ConfigForm):
+    legend = 'Database'
+    description = 'Settings for connecting to the database'
+    config = auth_config
+    attrs = {'db_config': {'class': 'input-xxlarge'}}
+
+    db_config = TextField(
+        'Connection String',
+        description="""
+        SQLAlchemy connection string. For full details on syntax and supported
+        database engines, see this section of the <a
+        href="http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html"
+        >SQLAlchemy documentation</a>.
+        Example: <code>postgresql://yubiauth:password@localhost/yubiauth</code>
+        """
+    )
+
+
 class ValidationServerForm(ConfigForm):
     legend = 'Validation Servers'
     description = 'Configure servers used for YubiKey OTP validation'
@@ -149,13 +167,19 @@ class YubiAuth(App):
     """
 
     name = 'auth'
-    sections = ['general', 'validation', 'advanced']
+    sections = ['general', 'database', 'validation', 'advanced']
 
     def general(self, request):
         """
         General
         """
         return self.render_forms(request, [SecurityForm(), HSMForm()])
+
+    def database(self, request):
+        """
+        Database
+        """
+        return self.render_forms(request, [DatabaseForm()])
 
     def validation(self, request):
         """

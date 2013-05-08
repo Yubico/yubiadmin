@@ -168,14 +168,14 @@ class SyncPoolForm(ConfigForm):
     sync_pool = ListField(
         'Sync Pool URLs', [URL()],
         description="""
-        List of URLs to other servers in the sync pool.<br />
+        List of URLs to other servers in the sync pool.
         Example: <code>http://example.com/wsapi/2.0/sync</code>
         """)
     allowed_sync_pool = ListField(
         'Allowed Sync IPs', [IPAddress()],
         description="""
         List of IP-addresses of other servers that are allowed to sync with
-        this server.<br />
+        this server.
         Example: <code>10.0.0.1</code>
         """)
 
@@ -193,9 +193,9 @@ class KSMForm(ConfigForm):
     ksm_urls = ListField(
         'KSM URLs', [URL()],
         description="""
-        List of URLs to KSMs.<br />
-        The URLs must be fully qualified, i.e., contain the OTP itself.<br />
-        Example: <code>http://example.com/wsapi/decrypt?otp=$otp</code><br />
+        List of URLs to KSMs.
+        The URLs must be fully qualified, i.e., contain the OTP itself.
+        Example: <code>http://example.com/wsapi/decrypt?otp=$otp</code>
         More advanced OTP to KSM mapping is possible by manually editing the
         configuration file.
         """)
