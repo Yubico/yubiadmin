@@ -25,6 +25,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import os
 from yubiadmin.util.app import App
 from yubiadmin.util.form import DBConfigForm
 
@@ -42,6 +43,7 @@ class YubikeyKsm(App):
 
     name = 'ksm'
     sections = ['database']
+    disabled = not os.path.isfile('/etc/yubico/ksm/ykksm-config.php')
 
     def database(self, request):
         """

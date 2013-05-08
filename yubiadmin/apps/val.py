@@ -26,6 +26,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import re
+import os
 from wtforms.fields import IntegerField
 from wtforms.validators import NumberRange, IPAddress, URL
 from yubiadmin.util.app import App
@@ -210,6 +211,7 @@ class YubikeyVal(App):
 
     name = 'val'
     sections = ['general', 'database', 'synchronization', 'ksms', 'advanced']
+    disabled = not os.path.isfile(YKVAL_CONFIG_FILE)
 
     def general(self, request):
         """

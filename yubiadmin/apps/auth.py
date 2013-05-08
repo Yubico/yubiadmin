@@ -25,6 +25,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import os
 from wtforms.fields import SelectField, TextField, BooleanField, IntegerField
 from wtforms.validators import NumberRange, URL
 from yubiadmin.util.app import App
@@ -168,6 +169,7 @@ class YubiAuth(App):
 
     name = 'auth'
     sections = ['general', 'database', 'validation', 'advanced']
+    disabled = not os.path.isfile(AUTH_CONFIG_FILE)
 
     def general(self, request):
         """
