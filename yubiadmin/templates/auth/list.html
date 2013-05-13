@@ -1,0 +1,35 @@
+
+<table class="table table-striped">
+	<caption>YubiAuth users</caption>
+	<thead>
+		<tr>
+			<th style="width: 5%"><input type="checkbox" id="toggle_all" /></th>
+			<th style="width: 15%">Username</th>
+			<th style="width: 80%">YubiKeys</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for user in users %}
+		<tr>
+			<td><input type="checkbox" /></td>
+			<td>{{ user.name }}</td>
+			<td>{{ user.yubikeys | join(', ') }}</td>
+		</tr>
+		{% endfor %}
+	</tbody>
+</table>
+
+<strong class="pull-left">Users {{ offset + 1 }}-{{ shown }} of {{ num_users }}</strong>
+
+<ul class="pager pull-right">
+	{% if prev %}
+		<li><a href="{{ prev }}"><i class="icon-arrow-left"></i></a></li>
+	{% else %}
+		<li class="disabled"><a><i class="icon-arrow-left"></i></a></li>
+	{% endif %}
+	{% if next %}
+		<li><a href="{{ next }}"><i class="icon-arrow-right"></i></a></li>
+	{% else %}
+		<li class="disabled"><a><i class="icon-arrow-right"></i></a></li>
+	{% endif %}
+</ul>

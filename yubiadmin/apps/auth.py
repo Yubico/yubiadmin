@@ -26,12 +26,18 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import os
+import re
 from wtforms.fields import SelectField, TextField, BooleanField, IntegerField
 from wtforms.validators import NumberRange, URL
-from yubiadmin.util.app import App
+from yubiadmin.util.app import App, render
 from yubiadmin.util.config import (python_handler, python_list_handler,
                                    FileConfig)
 from yubiadmin.util.form import ConfigForm, FileForm, ListField
+try:
+    from yubiauth import YubiAuth
+    from yubiauth.core.model import User
+except:
+    YubiAuth = None
 
 __all__ = [
     'app'
@@ -160,7 +166,7 @@ class ValidationServerForm(ConfigForm):
         """)
 
 
-class YubiAuth(App):
+class YubiAuthApp(App):
     """
     YubiAuth
 
@@ -170,6 +176,11 @@ class YubiAuth(App):
     name = 'auth'
     sections = ['general', 'database', 'validation', 'advanced']
     disabled = not os.path.isfile(AUTH_CONFIG_FILE)
+
+    def __init__(self):
+        if YubiAuth:
+            self._users = YubiAuthUsers()
+            self.sections.insert(3, 'users')
 
     def general(self, request):
         """
@@ -197,8 +208,69 @@ class YubiAuth(App):
             FileForm(AUTH_CONFIG_FILE, 'Configuration')
         ])
 
+    def users(self, request):
+        """
+        Manage Users
+        """
+        return self._users(request) if YubiAuth else ""
+
     # Pulls the tab to the right:
     advanced.advanced = True
 
 
-app = YubiAuth()
+class YubiAuthUsers(object):
+    user_range = re.compile('(\d+)-(\d+)')
+
+    def __init__(self):
+        self.auth = YubiAuth()
+        self.auth.create_user('dain', 'foo')
+        self.auth.create_user('klas', 'foo')
+        self.auth.create_user('tom', 'foo')
+        user = self.auth.create_user('simon', 'foo')
+        user.assign_yubikey('cccccccccccd')
+        user.assign_yubikey('ccccccccccce')
+        self.auth.create_user('user1', 'foo')
+        self.auth.create_user('user2', 'foo')
+        self.auth.create_user('user3', 'foo')
+        self.auth.create_user('user4', 'foo')
+        self.auth.create_user('user5', 'foo')
+        self.auth.create_user('user6', 'foo')
+        self.auth.create_user('user7', 'foo')
+        self.auth.create_user('user8', 'foo')
+        self.auth.create_user('user9', 'foo')
+        self.auth.create_user('user0', 'foo')
+        self.auth.commit()
+
+    def __call__(self, request):
+        sub_cmd = request.path_info_pop()
+        if sub_cmd == 'create':
+            return ''
+        else:
+            match = self.user_range.match(sub_cmd) if sub_cmd else None
+            if match:
+                offset = int(match.group(1)) - 1
+                limit = int(match.group(2)) - offset
+            else:
+                offset = 0
+                limit = 10
+        return self.list_users(offset, limit)
+
+    def list_users(self, offset, limit):
+        users = self.auth.session.query(User).offset(offset).limit(limit)
+        num_users = self.auth.session.query(User).count()
+        shown = min(offset + limit, num_users)
+        if offset > 0:
+            st = max(0, offset - limit)
+            ed = st + limit
+            prev = '/auth/users/%d-%d' % (st + 1, ed)
+        else:
+            prev = None
+        if num_users > shown:
+            next = '/auth/users/%d-%d' % (offset + limit + 1, shown + limit)
+        else:
+            next = None
+
+        return render('auth/list', users=users, offset=offset, limit=limit,
+                      num_users=num_users, shown=shown, prev=prev, next=next)
+
+app = YubiAuthApp()
