@@ -1,0 +1,20 @@
+{% macro ids(users) -%}
+	{%- for user in users -%}
+	{{ user[1] }}
+	{%- if not loop.last -%},{%- endif -%}
+	{%- endfor -%}
+{%- endmacro %}
+
+<legend>Confirm deletion</legend>
+<p>Are you sure you wish to delete the following users?</p>
+<ul>
+	{% for user in users %}
+	<li>{{ user[0] }}</li>
+	{% endfor %}
+</ul>
+
+<form action="delete_confirm" method="post">
+	<input type="submit" class="btn btn-danger" value="Delete users" />
+	<input type="hidden" name="delete" value="{{ ids(users) }}" />
+	<a href="/auth/users" class="btn">Cancel</a>
+</form>

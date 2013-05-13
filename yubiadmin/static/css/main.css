@@ -11,10 +11,6 @@ label {
 	font-weight: bold;
 }
 
-.pager {
-	margin: 0px;
-}
-
 .pager li.disabled {
 	opacity: 0.5;
 }

@@ -1,3 +1,4 @@
+<form action="/auth/users/delete" method="post">
 
 <table class="table table-striped">
 	<caption>YubiAuth users</caption>
@@ -5,31 +6,36 @@
 		<tr>
 			<th style="width: 5%"><input type="checkbox" id="toggle_all" /></th>
 			<th style="width: 15%">Username</th>
-			<th style="width: 80%">YubiKeys</th>
+			<th style="width: 15%">YubiKeys</th>
+			<th style="width: 65%; text-align: right;">
+				Users {{ shown }} of {{ num_users }}
+				&nbsp;
+				<div class="btn-group">
+				{% if prev %}
+					<a class="btn btn-small" href="{{ prev }}">Prev</a>
+				{% else %}
+					<a class="btn btn-small disabled">Prev</a>
+				{% endif %}
+				{% if next %}
+					<a class="btn btn-small" href="{{ next }}">Next</a>
+				{% else %}
+					<a class="btn btn-small disabled">Next</a>
+				{% endif %}
+				</div>
+			</th>
 		</tr>
 	</thead>
 	<tbody>
 		{% for user in users %}
 		<tr>
-			<td><input type="checkbox" /></td>
+			<td><input type="checkbox" name="user/{{ user.id }}"/></td>
 			<td>{{ user.name }}</td>
-			<td>{{ user.yubikeys | join(', ') }}</td>
+			<td colspan="2">{{ user.yubikeys | join(', ') }}</td>
 		</tr>
 		{% endfor %}
 	</tbody>
 </table>
 
-<strong class="pull-left">Users {{ offset + 1 }}-{{ shown }} of {{ num_users }}</strong>
-
-<ul class="pager pull-right">
-	{% if prev %}
-		<li><a href="{{ prev }}"><i class="icon-arrow-left"></i></a></li>
-	{% else %}
-		<li class="disabled"><a><i class="icon-arrow-left"></i></a></li>
-	{% endif %}
-	{% if next %}
-		<li><a href="{{ next }}"><i class="icon-arrow-right"></i></a></li>
-	{% else %}
-		<li class="disabled"><a><i class="icon-arrow-right"></i></a></li>
-	{% endif %}
-</ul>
+<input id="delete_btn" type="submit" class="btn btn-danger" value="Delete selected" />
+<a href="/auth/users/create" class="btn btn-primary pull-right">Create new user</a>
+</form>

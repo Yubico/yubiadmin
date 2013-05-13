@@ -28,6 +28,7 @@
 import os
 from jinja2 import Environment, FileSystemLoader
 from webob import exc
+from webob.dec import wsgify
 
 __all__ = [
     'App',
@@ -41,9 +42,28 @@ template_dir = os.path.join(base_dir, 'templates')
 env = Environment(loader=FileSystemLoader(template_dir))
 
 
+class TemplateBinding(object):
+    def __init__(self, template, **kwargs):
+        self.template = env.get_template('%s.html' % template)
+        self.data = kwargs
+        for (key, val) in kwargs.items():
+            if isinstance(val, TemplateBinding):
+                self.data.update(val.data)
+
+    def extend(self, sub_variable, sub_binding):
+        self.data.update(sub_binding.data)
+        self.data[sub_variable] = sub_binding
+
+    def __str__(self):
+        return self.template.render(self.data)
+
+    @wsgify
+    def __call__(self, request):
+        return str(self)
+
+
 def render(tmpl, **kwargs):
-    template = env.get_template('%s.html' % tmpl)
-    return template.render(**kwargs)
+    return TemplateBinding(tmpl, **kwargs)
 
 
 def populate_forms(forms, data):
@@ -68,7 +88,8 @@ class App(object):
     def redirect(self, url):
         raise exc.HTTPSeeOther(location=url)
 
-    def render_forms(self, request, forms, template='form', **kwargs):
+    def render_forms(self, request, forms, template='form',
+                     success_msg='Settings updated!', **kwargs):
         alert = None
         if not request.params:
             for form in forms:
@@ -80,7 +101,7 @@ class App(object):
                 errors = not form.validate() or errors
             if not errors:
                 try:
-                    alert = {'type': 'success', 'title': 'Settings updated!'}
+                    alert = {'type': 'success', 'title': success_msg}
                     for form in forms:
                         form.save()
                 except Exception as e:

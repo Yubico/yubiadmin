@@ -27,8 +27,11 @@
 
 import os
 import re
-from wtforms.fields import SelectField, TextField, BooleanField, IntegerField
-from wtforms.validators import NumberRange, URL
+from wtforms import Form
+from wtforms.fields import (SelectField, TextField, BooleanField, IntegerField,
+                            PasswordField)
+from wtforms.widgets import PasswordInput
+from wtforms.validators import NumberRange, URL, EqualTo
 from yubiadmin.util.app import App, render
 from yubiadmin.util.config import (python_handler, python_list_handler,
                                    FileConfig)
@@ -218,11 +221,36 @@ class YubiAuthApp(App):
     advanced.advanced = True
 
 
-class YubiAuthUsers(object):
+class CreateUserForm(Form):
+    legend = 'Create new User'
+    username = TextField()
+    password = PasswordField('Password',
+                             widget=PasswordInput(hide_value=False))
+    verify = PasswordField('Verify password',
+                           [EqualTo('password')],
+                           widget=PasswordInput(hide_value=False))
+
+    def __init__(self, auth, **kwargs):
+        super(CreateUserForm, self).__init__(**kwargs)
+        self.auth = auth
+
+    def load(self):
+        pass
+
+    def save(self):
+        self.auth.create_user(self.username.data, self.password.data)
+        self.auth.commit()
+        self.username.data = None
+        self.password.data = None
+        self.verify.data = None
+
+
+class YubiAuthUsers(App):
     user_range = re.compile('(\d+)-(\d+)')
 
     def __init__(self):
         self.auth = YubiAuth()
+        # return
         self.auth.create_user('dain', 'foo')
         self.auth.create_user('klas', 'foo')
         self.auth.create_user('tom', 'foo')
@@ -244,7 +272,11 @@ class YubiAuthUsers(object):
     def __call__(self, request):
         sub_cmd = request.path_info_pop()
         if sub_cmd == 'create':
-            return ''
+            return self.create(request)
+        elif sub_cmd == 'delete':
+            return self.delete(request)
+        elif sub_cmd == 'delete_confirm':
+            return self.delete_confirm(request)
         else:
             match = self.user_range.match(sub_cmd) if sub_cmd else None
             if match:
@@ -255,22 +287,42 @@ class YubiAuthUsers(object):
                 limit = 10
         return self.list_users(offset, limit)
 
+    def create(self, request):
+        return self.render_forms(request, [CreateUserForm(self.auth)],
+                                 success_msg='User created!')
+
+    def delete(self, request):
+        ids = [int(x[5:]) for x in request.params if request.params[x] == 'on']
+        users = self.auth.session.query(User.name, User.id) \
+            .filter(User.id.in_(ids)).all()
+        return render('auth/delete', users=users)
+
+    def delete_confirm(self, request):
+        ids = [int(x) for x in request.params['delete'].split(',')]
+        self.auth.session.query(User).filter(User.id.in_(ids)).delete('fetch')
+        self.auth.commit()
+        return self.redirect('/auth/users')
+
     def list_users(self, offset, limit):
-        users = self.auth.session.query(User).offset(offset).limit(limit)
+        users = self.auth.session.query(User).order_by(User.name) \
+            .offset(offset).limit(limit)
         num_users = self.auth.session.query(User).count()
-        shown = min(offset + limit, num_users)
+        shown = (min(offset + 1, num_users), min(offset + limit, num_users))
         if offset > 0:
             st = max(0, offset - limit)
             ed = st + limit
             prev = '/auth/users/%d-%d' % (st + 1, ed)
         else:
             prev = None
-        if num_users > shown:
-            next = '/auth/users/%d-%d' % (offset + limit + 1, shown + limit)
+        if num_users > shown[1]:
+            next = '/auth/users/%d-%d' % (offset + limit + 1, shown[1] + limit)
         else:
             next = None
 
-        return render('auth/list', users=users, offset=offset, limit=limit,
-                      num_users=num_users, shown=shown, prev=prev, next=next)
+        return render(
+            'auth/list', script='auth', users=users, offset=offset,
+            limit=limit, num_users=num_users, shown='%d-%d' % shown, prev=prev,
+            next=next)
+
 
 app = YubiAuthApp()
