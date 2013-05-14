@@ -101,7 +101,8 @@ class App(object):
                 errors = not form.validate() or errors
             if not errors:
                 try:
-                    alert = {'type': 'success', 'title': success_msg}
+                    if success_msg:
+                        alert = {'type': 'success', 'title': success_msg}
                     for form in forms:
                         form.save()
                 except Exception as e:

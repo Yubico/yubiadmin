@@ -1,6 +1,6 @@
 <form action="/auth/users/delete" method="post">
 
-<table class="table table-striped">
+<table class="table table-striped table-condensed">
 	<caption>YubiAuth users</caption>
 	<thead>
 		<tr>
@@ -29,7 +29,7 @@
 		{% for user in users %}
 		<tr>
 			<td><input type="checkbox" name="user/{{ user.id }}"/></td>
-			<td>{{ user.name }}</td>
+			<td><a href="/auth/users/user/{{ user.id }}">{{ user.name }}</a></td>
 			<td colspan="2">{{ user.yubikeys | join(', ') }}</td>
 		</tr>
 		{% endfor %}

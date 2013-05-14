@@ -31,7 +31,7 @@ from wtforms import Form
 from wtforms.fields import (SelectField, TextField, BooleanField, IntegerField,
                             PasswordField)
 from wtforms.widgets import PasswordInput
-from wtforms.validators import NumberRange, URL, EqualTo
+from wtforms.validators import NumberRange, URL, EqualTo, Regexp, Optional
 from yubiadmin.util.app import App, render
 from yubiadmin.util.config import (python_handler, python_list_handler,
                                    FileConfig)
@@ -223,7 +223,7 @@ class YubiAuthApp(App):
 
 class CreateUserForm(Form):
     legend = 'Create new User'
-    username = TextField()
+    username = TextField('Username')
     password = PasswordField('Password',
                              widget=PasswordInput(hide_value=False))
     verify = PasswordField('Verify password',
@@ -245,29 +245,57 @@ class CreateUserForm(Form):
         self.verify.data = None
 
 
+class SetPasswordForm(Form):
+    legend = 'Change Password'
+    password = PasswordField('New password',
+                             [Optional()],
+                             widget=PasswordInput(hide_value=False))
+    verify = PasswordField('Verify password',
+                           [EqualTo('password')],
+                           widget=PasswordInput(hide_value=False))
+
+    def __init__(self, user, auth, **kwargs):
+        super(SetPasswordForm, self).__init__(**kwargs)
+        self.user = user
+        self.auth = auth
+
+    def load(self):
+        pass
+
+    def save(self):
+        if self.password.data:
+            self.user.set_password(self.password.data)
+            self.auth.commit()
+            self.password.data = None
+            self.verify.data = None
+
+
+class AssignYubiKeyForm(Form):
+    legend = 'Assign YubiKey'
+    assign = TextField('Assign YubiKey',
+                       [Regexp(r'^[cbdefghijklnrtuv]{1,64}$'),
+                           Optional()])
+
+    def __init__(self, user, auth, **kwargs):
+        super(AssignYubiKeyForm, self).__init__(**kwargs)
+        self.user = user
+        self.auth = auth
+
+    def load(self):
+        pass
+
+    def save(self):
+        if self.assign.data:
+            self.user.assign_yubikey(self.assign.data)
+            self.assign.data = None
+            self.auth.commit()
+
+
 class YubiAuthUsers(App):
     user_range = re.compile('(\d+)-(\d+)')
 
     def __init__(self):
         self.auth = YubiAuth()
-        # return
-        self.auth.create_user('dain', 'foo')
-        self.auth.create_user('klas', 'foo')
-        self.auth.create_user('tom', 'foo')
-        user = self.auth.create_user('simon', 'foo')
-        user.assign_yubikey('cccccccccccd')
-        user.assign_yubikey('ccccccccccce')
-        self.auth.create_user('user1', 'foo')
-        self.auth.create_user('user2', 'foo')
-        self.auth.create_user('user3', 'foo')
-        self.auth.create_user('user4', 'foo')
-        self.auth.create_user('user5', 'foo')
-        self.auth.create_user('user6', 'foo')
-        self.auth.create_user('user7', 'foo')
-        self.auth.create_user('user8', 'foo')
-        self.auth.create_user('user9', 'foo')
-        self.auth.create_user('user0', 'foo')
-        self.auth.commit()
 
     def __call__(self, request):
         sub_cmd = request.path_info_pop()
@@ -277,6 +305,8 @@ class YubiAuthUsers(App):
             return self.delete(request)
         elif sub_cmd == 'delete_confirm':
             return self.delete_confirm(request)
+        elif sub_cmd == 'user':
+            return self.show_user(request)
         else:
             match = self.user_range.match(sub_cmd) if sub_cmd else None
             if match:
@@ -323,6 +353,21 @@ class YubiAuthUsers(App):
             'auth/list', script='auth', users=users, offset=offset,
             limit=limit, num_users=num_users, shown='%d-%d' % shown, prev=prev,
             next=next)
+
+    def show_user(self, request):
+        id = int(request.path_info_pop())
+        user = self.auth.get_user(id)
+        if 'unassign' in request.params:
+            del user.yubikeys[request.params['unassign']]
+            self.auth.commit()
+        msg = None
+        if 'password' in request.params:
+            msg = 'Password set!'
+        return self.render_forms(request,
+                                 [SetPasswordForm(user, self.auth),
+                                 AssignYubiKeyForm(user, self.auth)],
+                                 'auth/user', user=user,
+                                 success_msg=msg)
 
 
 app = YubiAuthApp()
