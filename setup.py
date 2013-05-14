@@ -32,7 +32,7 @@ from release import release
 
 setup(
     name='yubiadmin',
-    version='0.0.10',
+    version='0.1.0',
     author='Dain Nilsson',
     author_email='dain@yubico.com',
     maintainer='Yubico Open Source Maintainers',
