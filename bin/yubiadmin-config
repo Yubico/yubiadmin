@@ -1,0 +1,100 @@
+#!/usr/bin/python
+# Copyright (c) 2013 Yubico AB
+# All rights reserved.
+#
+#   Redistribution and use in source and binary forms, with or
+#   without modification, are permitted provided that the following
+#   conditions are met:
+#
+#    1. Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#    2. Redistributions in binary form must reproduce the above
+#       copyright notice, this list of conditions and the following
+#       disclaimer in the documentation and/or other materials provided
+#       with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+import sys
+import argparse
+from yubiadmin.apps.admin import admin_config
+
+
+def get_interactive(config):
+    print 'Specify which interface to listen to.'
+    print '127.0.0.1 will only be accessible from the local machine.'
+    print '0.0.0.0 will be accessible from any interface.'
+    print 'Press enter to keep the current settings.'
+    interface = raw_input('Interface [%s]: ' % config['interface'])
+    if interface:
+        config['interface'] = interface
+
+    port = raw_input('Port      [%s]: ' % config['port'])
+    if port:
+        config['port'] = int(port)
+
+    print 'Set the credentials required for accessing YubiAdmin via the web ' \
+        'interface.'
+    print 'Press enter to keep the current settings.'
+    username = raw_input('Username  [%s]: ' % config['username'])
+    if username:
+        config['username'] = username
+
+    password = raw_input('Password  [%s]: ' % ('*' * len(config['password'])))
+    if password:
+        password2 = raw_input('Repeat password: ')
+        if password == password2:
+            config['password'] = password
+        else:
+            print 'ERROR: Passwords did not match!'
+            sys.exit(1)
+
+
+def get_args(config):
+    parser = argparse.ArgumentParser(
+        description='Configure YubiAdmin\n'
+        'Interactively configures YubiAdmin when run with no arguments,\n'
+        'or sets the arguments given via the arguments passed to the program',
+        add_help=True,
+        # formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument('-i', '--interface', nargs='?',
+                        default=config['interface'],
+                        help='Listening interface')
+    parser.add_argument('-p', '--port', type=int, nargs='?',
+                        default=config['port'], help='Listening port')
+    parser.add_argument('-U', '--username', nargs='?',
+                        default=config['username'],
+                        help='Username for authentication')
+    parser.add_argument('-P', '--password', nargs='?',
+                        default=config['password'],
+                        help='Password for authentication')
+
+    args = parser.parse_args()
+    config.update(vars(args))
+
+
+if __name__ == '__main__':
+    admin_config.read()
+
+    if len(sys.argv) > 1:
+        get_args(admin_config)
+    else:
+        get_interactive(admin_config)
+
+    admin_config.commit()
+
+    print '\n%s written!' % admin_config.filename
+    print 'YubiAdmin needs to be restarted for these settings to take effect.'
+    print '\n    service yubiadmin restart'
