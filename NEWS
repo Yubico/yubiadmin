@@ -1,3 +1,7 @@
+* Version 0.1.1 (unreleased)
+
+  * Added yubiadmin-config CLI tool.
+
 * Version 0.1.0 (released 2013-05-14)
 
   * Added basic user management to YubiAuth app.
