@@ -2,6 +2,8 @@
 
   * Added yubiadmin-config CLI tool.
 
+  * Added API clients to val.
+
 * Version 0.1.0 (released 2013-05-14)
 
   * Added basic user management to YubiAuth app.
