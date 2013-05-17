@@ -26,12 +26,14 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import os
+import re
 from jinja2 import Environment, FileSystemLoader
 from webob import exc
 from webob.dec import wsgify
 
 __all__ = [
     'App',
+    'CollectionApp',
     'render',
     'populate_forms',
 ]
@@ -113,3 +115,57 @@ class App(object):
 
         return render(template, target=request.path, fieldsets=forms,
                       alert=alert, **kwargs)
+
+
+ITEM_RANGE = re.compile('(\d+)-(\d+)')
+
+
+class CollectionApp(App):
+    base_url = ''
+    caption = 'Items'
+    item_name = 'Items'
+    columns = []
+    template = 'table'
+    script = 'table'
+
+    def size(self):
+        return 0
+
+    def get(self, offset, limit):
+        return [{}]
+
+    def __call__(self, request):
+        sub_cmd = request.path_info_pop()
+        if sub_cmd and hasattr(self, sub_cmd):
+            return getattr(self, sub_cmd)(request)
+        else:
+            match = ITEM_RANGE.match(sub_cmd) if sub_cmd else None
+            if match:
+                offset = int(match.group(1)) - 1
+                limit = int(match.group(2)) - offset
+            else:
+                offset = 0
+                limit = 10
+        return self.list(offset, limit)
+
+    def list(self, offset, limit):
+        items = self.get(offset, limit)
+        total = self.size()
+        shown = (min(offset + 1, total), min(offset + limit, total))
+        if offset > 0:
+            st = max(0, offset - limit)
+            ed = st + limit
+            prev = '%s/%d-%d' % (self.base_url, st + 1, ed)
+        else:
+            prev = None
+        if total > shown[1]:
+            next = '%s/%d-%d' % (self.base_url, offset + limit + 1, shown[1]
+                                 + limit)
+        else:
+            next = None
+
+        return render(
+            self.template, script=self.script, items=items, offset=offset,
+            limit=limit, total=total, shown='%d-%d' % shown, prev=prev,
+            next=next, base_url=self.base_url, caption=self.caption,
+            cols=self.columns, item_name=self.item_name)

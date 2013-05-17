@@ -26,13 +26,12 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import os
-import re
 from wtforms import Form
 from wtforms.fields import (SelectField, TextField, BooleanField, IntegerField,
                             PasswordField)
 from wtforms.widgets import PasswordInput
 from wtforms.validators import NumberRange, URL, EqualTo, Regexp, Optional
-from yubiadmin.util.app import App, render
+from yubiadmin.util.app import App, CollectionApp, render
 from yubiadmin.util.config import (python_handler, python_list_handler,
                                    FileConfig)
 from yubiadmin.util.form import ConfigForm, FileForm, ListField
@@ -291,31 +290,29 @@ class AssignYubiKeyForm(Form):
             self.auth.commit()
 
 
-class YubiAuthUsers(App):
-    user_range = re.compile('(\d+)-(\d+)')
+class YubiAuthUsers(CollectionApp):
+    base_url = '/auth/users'
+    item_name = 'Users'
+    caption = 'YubiAuth Users'
+    columns = ['Username', 'YubiKeys']
+    template = 'auth/list'
 
     def __init__(self):
         self.auth = YubiAuth()
 
-    def __call__(self, request):
-        sub_cmd = request.path_info_pop()
-        if sub_cmd == 'create':
-            return self.create(request)
-        elif sub_cmd == 'delete':
-            return self.delete(request)
-        elif sub_cmd == 'delete_confirm':
-            return self.delete_confirm(request)
-        elif sub_cmd == 'user':
-            return self.show_user(request)
-        else:
-            match = self.user_range.match(sub_cmd) if sub_cmd else None
-            if match:
-                offset = int(match.group(1)) - 1
-                limit = int(match.group(2)) - offset
-            else:
-                offset = 0
-                limit = 10
-        return self.list_users(offset, limit)
+    def size(self):
+        return self.auth.session.query(User).count()
+
+    def get(self, offset, limit):
+        users = self.auth.session.query(User).order_by(User.name) \
+            .offset(offset).limit(limit)
+
+        return map(lambda user: {
+            'id': user.id,
+            'Username': '<a href="/auth/users/show/%d">%s</a>' % (user.id,
+                                                                  user.name),
+            'YubiKeys': ', '.join(user.yubikeys.keys())
+        }, users)
 
     def create(self, request):
         return self.render_forms(request, [CreateUserForm(self.auth)],
@@ -333,28 +330,7 @@ class YubiAuthUsers(App):
         self.auth.commit()
         return self.redirect('/auth/users')
 
-    def list_users(self, offset, limit):
-        users = self.auth.session.query(User).order_by(User.name) \
-            .offset(offset).limit(limit)
-        num_users = self.auth.session.query(User).count()
-        shown = (min(offset + 1, num_users), min(offset + limit, num_users))
-        if offset > 0:
-            st = max(0, offset - limit)
-            ed = st + limit
-            prev = '/auth/users/%d-%d' % (st + 1, ed)
-        else:
-            prev = None
-        if num_users > shown[1]:
-            next = '/auth/users/%d-%d' % (offset + limit + 1, shown[1] + limit)
-        else:
-            next = None
-
-        return render(
-            'auth/list', script='auth', users=users, offset=offset,
-            limit=limit, num_users=num_users, shown='%d-%d' % shown, prev=prev,
-            next=next)
-
-    def show_user(self, request):
+    def show(self, request):
         id = int(request.path_info_pop())
         user = self.auth.get_user(id)
         if 'unassign' in request.params:

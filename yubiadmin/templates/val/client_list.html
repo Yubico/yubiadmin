@@ -1,9 +1,9 @@
 {% from 'table.html' import table %}
 
-<form action="/auth/users/delete" method="post">
+<form action="/val/clients/delete" method="post">
 	
 {{ table(cols, items, caption, next, prev, shown, total, item_name) }}
 
 <input id="delete_btn" type="submit" class="btn btn-danger" value="Delete selected" />
-<a href="/auth/users/create" class="btn btn-primary pull-right">Create new user</a>
+<a href="/val/clients/create" class="btn btn-primary pull-right">Create new API client</a>
 </form>

@@ -29,11 +29,11 @@ import re
 import os
 from wtforms.fields import IntegerField
 from wtforms.validators import NumberRange, IPAddress, URL
-from yubiadmin.util.app import App
+from yubiadmin.util.app import App, CollectionApp
 from yubiadmin.util.config import (RegexHandler, FileConfig, php_inserter,
                                    parse_block, strip_comments, strip_quotes)
 from yubiadmin.util.form import ConfigForm, FileForm, DBConfigForm, ListField
-from yubiadmin.util.system import invoke_rc_d
+from yubiadmin.util.system import invoke_rc_d, run
 
 __all__ = [
     'app'
@@ -210,14 +210,24 @@ class YubikeyVal(App):
     """
 
     name = 'val'
-    sections = ['general', 'database', 'synchronization', 'ksms', 'advanced']
+    sections = ['general', 'clients', 'database', 'synchronization', 'ksms',
+                'advanced']
     disabled = not os.path.isfile(YKVAL_CONFIG_FILE)
+
+    def __init__(self):
+        self._clients = YubikeyValClients()
 
     def general(self, request):
         """
         General
         """
         return self.render_forms(request, [SyncLevelsForm(), MiscForm()])
+
+    def clients(self, request):
+        """
+        API Clients
+        """
+        return self._clients(request)
 
     def database(self, request):
         """
@@ -260,7 +270,40 @@ class YubikeyVal(App):
             FileForm(YKVAL_CONFIG_FILE, 'Configuration')
         ])
 
-    #Pulls the tab to the right:
+    # Pulls the tab to the right:
     advanced.advanced = True
+
+
+class YubikeyValClients(CollectionApp):
+    base_url = '/val/clients'
+    item_name = 'Clients'
+    caption = 'Client API Keys'
+    columns = ['Client ID', 'API Key']
+    template = 'val/client_list'
+
+    def __call__(self, request):
+        self._data = None
+        return super(YubikeyValClients, self).__call__(request)
+
+    @property
+    def data(self):
+        if self._data is None:
+            self._data = []
+            status, output = run('ykval-export-clients')
+            for line in output.splitlines():
+                parts = line.split(',')
+                self._data.append({
+                    'id': parts[0],
+                    'Client ID': parts[0],
+                    'API Key': parts[3]
+                })
+
+        return self._data
+
+    def size(self):
+        return len(self.data)
+
+    def get(self, offset, limit):
+        return self.data[offset:offset + limit]
 
 app = YubikeyVal()
