@@ -29,7 +29,7 @@
 import os
 import base64
 import argparse
-from wsgiref.simple_server import make_server
+from wsgiref.simple_server import make_server, WSGIRequestHandler
 from webob.dec import wsgify
 from webob import exc
 from yubiadmin import server
@@ -39,6 +39,10 @@ from yubiadmin.config import settings
 REALM = 'YubiADMIN'
 STATIC_ASSETS = ['js', 'css', 'img', 'favicon.ico']
 
+
+class CustomRequestHandler(WSGIRequestHandler):
+    def address_string(self):
+        return str(self.client_address[0])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -81,5 +85,6 @@ if __name__ == '__main__':
         response.www_authenticate = ('Basic', {'realm': REALM})
         return response
 
-    httpd = make_server(args.interface, args.port, with_static)
+    httpd = make_server(args.interface, args.port, with_static,
+                        handler_class=CustomRequestHandler)
     httpd.serve_forever()
