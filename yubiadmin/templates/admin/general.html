@@ -8,12 +8,13 @@
 	</span>
 	<br />
 	<form action="restart" method="post" onsubmit="return restart_submit();">
-		<button class="btn btn-danger">Restart server</button>
+		<button id="restart" class="btn btn-danger" data-loading-text="Restarting...">Restart server</button>
 	</form>
 	<script>
 		function restart_submit(e) {
-			$.get('restart');
+			$.get('restart?now');
 			setTimeout('location.reload();', 1000);
+			$('#restart').button('loading');
 			return false;
 		}
 	</script>

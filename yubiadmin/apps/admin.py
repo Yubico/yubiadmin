@@ -89,8 +89,11 @@ class YubiAdmin(App):
                                  template='admin/general')
 
     def restart(self, request):
-        timer = Timer(1, invoke_rc_d, args=('yubiadmin', 'restart'))
-        timer.start()
+        if 'now' in request.params:
+            invoke_rc_d('yubiadmin', 'restart')
+        else:
+            timer = Timer(1, invoke_rc_d, args=('yubiadmin', 'restart'))
+            timer.start()
         return self.redirect('/%s/general' % self.name)
 
 
