@@ -212,7 +212,10 @@ class YubikeyVal(App):
     name = 'val'
     sections = ['general', 'clients', 'database', 'synchronization', 'ksms',
                 'advanced']
-    disabled = not os.path.isfile(YKVAL_CONFIG_FILE)
+
+    @property
+    def disabled(self):
+        return not os.path.isfile(YKVAL_CONFIG_FILE)
 
     def __init__(self):
         self._clients = YubikeyValClients()

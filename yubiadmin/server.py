@@ -33,7 +33,6 @@ from yubiadmin.apps import apps
 
 
 def inspect_app(app):
-    cls = app.__class__
     doc = app.__doc__.strip()
     title, desc = doc.split('\n', 1)
     desc = desc.strip()
@@ -41,10 +40,10 @@ def inspect_app(app):
         'name': section,
         'title': getattr(app, section).__doc__.strip(),
         'advanced': bool(getattr(getattr(app, section), 'advanced', False))
-    } for section in cls.sections]
+    } for section in app.sections]
 
     return {
-        'name': cls.name,
+        'name': app.name,
         'title': title,
         'description': desc,
         'sections': sections,
@@ -53,25 +52,24 @@ def inspect_app(app):
 
 
 class YubiAdmin(object):
-    def __init__(self):
-        self.apps = OrderedDict()
-        for app in apps:
-            app_data = inspect_app(app)
-            self.apps[app_data['name']] = (app, app_data)
-        self.modules = [data for (_, data) in self.apps.values()]
-
     @wsgify
     def __call__(self, request):
         module_name = request.path_info_pop()
         section_name = request.path_info_pop()
 
-        if not module_name:
-            return render('index', modules=self.modules)
+        apps_data = OrderedDict()
+        for app in apps:
+            app_data = inspect_app(app)
+            apps_data[app_data['name']] = (app, app_data)
+        modules = [data for (_, data) in apps_data.values()]
 
-        if not module_name in self.apps:
+        if not module_name:
+            return render('index', modules=modules)
+
+        if not module_name in apps_data:
             raise exc.HTTPNotFound
 
-        app, module = self.apps[module_name]
+        app, module = apps_data[module_name]
         if not section_name:
             section_name = module['sections'][0]['name']
             raise exc.HTTPSeeOther(location=request.path + '/' + section_name)
@@ -84,7 +82,7 @@ class YubiAdmin(object):
 
         return render(
             'app_base',
-            modules=self.modules,
+            modules=modules,
             module=module,
             section=section,
             title='YubiAdmin - %s - %s' % (module_name, section_name),

@@ -43,7 +43,10 @@ class YubikeyKsm(App):
 
     name = 'ksm'
     sections = ['database']
-    disabled = not os.path.isfile('/etc/yubico/ksm/ykksm-config.php')
+
+    @property
+    def disabled(self):
+        return not os.path.isfile('/etc/yubico/ksm/ykksm-config.php')
 
     def database(self, request):
         """

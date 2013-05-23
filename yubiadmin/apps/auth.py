@@ -37,13 +37,14 @@ from yubiadmin.util.config import (python_handler, python_list_handler,
 from yubiadmin.util.form import ConfigForm, FileForm, ListField
 try:
     from yubiauth import YubiAuth
-    from yubiauth.core.model import User
 except:
     YubiAuth = None
+
 
 __all__ = [
     'app'
 ]
+
 
 AUTH_CONFIG_FILE = '/etc/yubico/auth/yubiauth.conf'
 YKVAL_SERVERS = [
@@ -177,12 +178,16 @@ class YubiAuthApp(App):
 
     name = 'auth'
     sections = ['general', 'database', 'validation', 'advanced']
-    disabled = not os.path.isfile(AUTH_CONFIG_FILE)
 
-    def __init__(self):
-        if YubiAuth:
-            self._users = YubiAuthUsers()
-            self.sections.insert(3, 'users')
+    @property
+    def disabled(self):
+        return not os.path.isfile(AUTH_CONFIG_FILE)
+
+    @property
+    def sections(self):
+        if not YubiAuth:
+            return ['general', 'database', 'validation', 'advanced']
+        return ['general', 'database', 'validation', 'users', 'advanced']
 
     def general(self, request):
         """
@@ -214,7 +219,8 @@ class YubiAuthApp(App):
         """
         Manage Users
         """
-        return self._users(request) if YubiAuth else ""
+        with YubiAuthUsers() as users:
+            return users(request)
 
     # Pulls the tab to the right:
     advanced.advanced = True
@@ -298,13 +304,21 @@ class YubiAuthUsers(CollectionApp):
     template = 'auth/list'
 
     def __init__(self):
+        from yubiauth.core.model import User as _user
+        self.User = _user
         self.auth = YubiAuth()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        del self.auth
+
     def size(self):
-        return self.auth.session.query(User).count()
+        return self.auth.session.query(self.User).count()
 
     def get(self, offset, limit):
-        users = self.auth.session.query(User).order_by(User.name) \
+        users = self.auth.session.query(self.User).order_by(self.User.name) \
             .offset(offset).limit(limit)
 
         return map(lambda user: {
@@ -320,13 +334,14 @@ class YubiAuthUsers(CollectionApp):
 
     def delete(self, request):
         ids = [int(x[5:]) for x in request.params if request.params[x] == 'on']
-        users = self.auth.session.query(User.name, User.id) \
-            .filter(User.id.in_(ids)).all()
+        users = self.auth.session.query(self.User.name, self.User.id) \
+            .filter(self.User.id.in_(ids)).all()
         return render('auth/delete', users=users)
 
     def delete_confirm(self, request):
         ids = [int(x) for x in request.params['delete'].split(',')]
-        self.auth.session.query(User).filter(User.id.in_(ids)).delete('fetch')
+        self.auth.session.query(self.User).filter(self.User.id.in_(ids)) \
+            .delete('fetch')
         self.auth.commit()
         return self.redirect('/auth/users')
 
