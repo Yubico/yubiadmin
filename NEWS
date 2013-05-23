@@ -7,6 +7,9 @@
   * Removed reverse lookup of clients which could cause long delays in
     answering requests.
 
+  * Re-read app data like sections and disabled state for each request
+    so that changes can be detected.
+
 * Version 0.1.0 (released 2013-05-14)
 
   * Added basic user management to YubiAuth app.
