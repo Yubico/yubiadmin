@@ -314,7 +314,7 @@ class YubikeyValClients(CollectionApp):
         return self._data[offset:limit]
 
     def create(self, request):
-        status, output = run('ykval-gen-clients')
+        status, output = run('ykval-gen-clients --urandom')
         print 'STATUS: %r' % status
         if status == 0:
             parts = [x.strip() for x in output.split(',')]
