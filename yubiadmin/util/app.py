@@ -92,7 +92,7 @@ class App(object):
 
     def render_forms(self, request, forms, template='form',
                      success_msg='Settings updated!', **kwargs):
-        alert = None
+        alerts = []
         if not request.params:
             for form in forms:
                 form.load()
@@ -104,17 +104,17 @@ class App(object):
             if not errors:
                 try:
                     if success_msg:
-                        alert = {'type': 'success', 'title': success_msg}
+                        alerts = [{'type': 'success', 'title': success_msg}]
                     for form in forms:
                         form.save()
                 except Exception as e:
-                    alert = {'type': 'error', 'title': 'Error:',
-                             'message': str(e)}
+                    alerts = [{'type': 'error', 'title': 'Error:',
+                               'message': str(e)}]
             else:
-                alert = {'type': 'error', 'title': 'Invalid data!'}
+                alerts = [{'type': 'error', 'title': 'Invalid data!'}]
 
         return render(template, target=request.path, fieldsets=forms,
-                      alert=alert, **kwargs)
+                      alerts=alerts, **kwargs)
 
 
 ITEM_RANGE = re.compile('(\d+)-(\d+)')
@@ -150,12 +150,11 @@ class CollectionApp(App):
             if match:
                 offset = int(match.group(1)) - 1
                 limit = int(match.group(2)) - offset
+                return self.list(offset, limit)
             else:
-                offset = 0
-                limit = 10
-        return self.list(offset, limit)
+                return self.list()
 
-    def list(self, offset, limit):
+    def list(self, offset=0, limit=10):
         items = self._get(offset, limit)
         total = self._size()
         shown = (min(offset + 1, total), min(offset + limit, total))

@@ -78,15 +78,7 @@
 	</fieldset>
 {%- endmacro -%}
 
-{%- macro render_form(fieldsets, action, alert=None) -%}
-	{% if alert %}
-	<div class="alert alert-{{ alert.type }}">
-		<button type="button" class="close" data-dismiss="alert">&times;</button>
-		<strong>{{ alert.title }}</strong>
-		{{ alert.message }}
-	</div>
-	{% endif %}
-
+{%- macro render_form(fieldsets, action) -%}
 	<form action="{{ action }}" method="post">
 	{% for fieldset in fieldsets %}
 		{{ form_fieldset(fieldset) }}
@@ -99,4 +91,4 @@
 	</form>
 {%- endmacro -%}
 
-{{ render_form(fieldsets, target, alert) }}
+{{ render_form(fieldsets, target) }}

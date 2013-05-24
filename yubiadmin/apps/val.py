@@ -29,7 +29,7 @@ import re
 import os
 from wtforms.fields import IntegerField
 from wtforms.validators import NumberRange, IPAddress, URL
-from yubiadmin.util.app import App, CollectionApp
+from yubiadmin.util.app import App, CollectionApp, render
 from yubiadmin.util.config import (RegexHandler, FileConfig, php_inserter,
                                    parse_block, strip_comments, strip_quotes)
 from yubiadmin.util.form import ConfigForm, FileForm, DBConfigForm, ListField
@@ -285,15 +285,8 @@ class YubikeyValClients(CollectionApp):
     template = 'val/client_list'
     selectable = False
 
-    def __init__(self):
-        self.__data = [
-            {'id': '1', 'label': '1', 'Client ID': '1', 'Enabled': True, 'API Key': 'aaaa'},
-            {'id': '2', 'label': '2', 'Client ID': '2', 'Enabled': False, 'API Key': 'bbbb'},
-            {'id': '3', 'label': '3', 'Client ID': '3', 'Enabled': True, 'API Key': 'cccc'},
-        ]
-
     def __call__(self, request):
-        #self.__data = None
+        self.__data = None
         return super(YubikeyValClients, self).__call__(request)
 
     @property
@@ -320,8 +313,17 @@ class YubikeyValClients(CollectionApp):
             limit += offset
         return self._data[offset:limit]
 
-    def _delete(self, ids):
-        self.__data = filter(lambda x: not x['id'] in ids, self.__data)
-        run('')
+    def create(self, request):
+        status, output = run('ykval-gen-clients')
+        print 'STATUS: %r' % status
+        if status == 0:
+            parts = [x.trim() for x in output.split(',')]
+            return render('val/client_created', client_id=parts[0],
+                          api_key=parts[1])
+        resp = self.list()
+        resp.data['alerts'] = [
+            {'type': 'error', 'title': 'Error generating client:',
+                'message': 'Command exited with status: %d' % status}]
+        return resp
 
 app = YubikeyVal()
