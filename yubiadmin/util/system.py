@@ -34,8 +34,10 @@ __all__ = [
 
 
 def run(cmd):
-    p = subprocess.Popen(['sh', '-c', cmd], stdout=subprocess.PIPE)
-    return p.wait(), p.stdout.read()
+    p = subprocess.Popen(['sh', '-c', cmd], stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
+    output = p.communicate()
+    return p.returncode, output[0]
 
 
 def invoke_rc_d(script, cmd):

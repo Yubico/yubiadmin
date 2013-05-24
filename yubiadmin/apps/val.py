@@ -285,37 +285,31 @@ class YubikeyValClients(CollectionApp):
     template = 'val/client_list'
     selectable = False
 
-    def __call__(self, request):
-        self.__data = None
-        return super(YubikeyValClients, self).__call__(request)
-
-    @property
-    def _data(self):
-        if self.__data is None:
-            self.__data = []
-            status, output = run('ykval-export-clients')
-            for line in output.splitlines():
-                parts = line.split(',')
-                self.__data.append({
-                    'id': parts[0],
-                    'label': '%s - %s' % (parts[0], parts[3]),
-                    'Client ID': parts[0],
-                    'Enabled': parts[1] != '0',
-                    'API Key': parts[3]
-                })
-        return self.__data
-
     def _size(self):
-        return len(self._data)
+        status, output = run('ykval-export-clients | wc -l')
+        return int(output) if status == 0 else 0
 
     def _get(self, offset=0, limit=None):
+        cmd = 'ykval-export-clients'
+        if offset > 0:
+            cmd += '| tail -n+%d' % (offset + 1)
         if limit:
-            limit += offset
-        return self._data[offset:limit]
+            cmd += '| head -n %d' % limit
+
+        status, output = run(cmd)
+        if status != 0:
+            return []
+
+        return [{
+            'id': parts[0],
+            'label': '%s - %s' % (parts[0], parts[3]),
+            'Client ID': parts[0],
+            'Enabled': parts[1] != '0',
+            'API Key': parts[3]
+        } for parts in [line.split(',') for line in output.splitlines()]]
 
     def create(self, request):
         status, output = run('ykval-gen-clients --urandom')
-        print 'STATUS: %r' % status
         if status == 0:
             parts = [x.strip() for x in output.split(',')]
             return render('val/client_created', client_id=parts[0],
