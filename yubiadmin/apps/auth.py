@@ -314,36 +314,33 @@ class YubiAuthUsers(CollectionApp):
     def __exit__(self, type, value, traceback):
         del self.auth
 
-    def size(self):
+    def _size(self):
         return self.auth.session.query(self.User).count()
 
-    def get(self, offset, limit):
+    def _get(self, offset=0, limit=None):
         users = self.auth.session.query(self.User).order_by(self.User.name) \
             .offset(offset).limit(limit)
 
         return map(lambda user: {
             'id': user.id,
+            'label': user.name,
             'Username': '<a href="/auth/users/show/%d">%s</a>' % (user.id,
                                                                   user.name),
             'YubiKeys': ', '.join(user.yubikeys.keys())
         }, users)
 
+    def _select(self, ids):
+        return self.auth.session.query(self.User.name, self.User.id) \
+            .filter(self.User.id.in_(map(int, ids))).all()
+
+    def _delete(self, ids):
+        self.auth.session.query(self.User) \
+            .filter(self.User.id.in_(map(int, ids))).delete('fetch')
+        self.auth.commit()
+
     def create(self, request):
         return self.render_forms(request, [CreateUserForm(self.auth)],
                                  success_msg='User created!')
-
-    def delete(self, request):
-        ids = [int(x[5:]) for x in request.params if request.params[x] == 'on']
-        users = self.auth.session.query(self.User.name, self.User.id) \
-            .filter(self.User.id.in_(ids)).all()
-        return render('auth/delete', users=users)
-
-    def delete_confirm(self, request):
-        ids = [int(x) for x in request.params['delete'].split(',')]
-        self.auth.session.query(self.User).filter(self.User.id.in_(ids)) \
-            .delete('fetch')
-        self.auth.commit()
-        return self.redirect('/auth/users')
 
     def show(self, request):
         id = int(request.path_info_pop())

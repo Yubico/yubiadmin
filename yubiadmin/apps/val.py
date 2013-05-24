@@ -281,32 +281,47 @@ class YubikeyValClients(CollectionApp):
     base_url = '/val/clients'
     item_name = 'Clients'
     caption = 'Client API Keys'
-    columns = ['Client ID', 'API Key']
+    columns = ['Client ID', 'Enabled', 'API Key']
     template = 'val/client_list'
+    selectable = False
+
+    def __init__(self):
+        self.__data = [
+            {'id': '1', 'label': '1', 'Client ID': '1', 'Enabled': True, 'API Key': 'aaaa'},
+            {'id': '2', 'label': '2', 'Client ID': '2', 'Enabled': False, 'API Key': 'bbbb'},
+            {'id': '3', 'label': '3', 'Client ID': '3', 'Enabled': True, 'API Key': 'cccc'},
+        ]
 
     def __call__(self, request):
-        self._data = None
+        #self.__data = None
         return super(YubikeyValClients, self).__call__(request)
 
     @property
-    def data(self):
-        if self._data is None:
-            self._data = []
+    def _data(self):
+        if self.__data is None:
+            self.__data = []
             status, output = run('ykval-export-clients')
             for line in output.splitlines():
                 parts = line.split(',')
-                self._data.append({
+                self.__data.append({
                     'id': parts[0],
+                    'label': '%s - %s' % (parts[0], parts[3]),
                     'Client ID': parts[0],
+                    'Enabled': parts[1] != '0',
                     'API Key': parts[3]
                 })
+        return self.__data
 
-        return self._data
+    def _size(self):
+        return len(self._data)
 
-    def size(self):
-        return len(self.data)
+    def _get(self, offset=0, limit=None):
+        if limit:
+            limit += offset
+        return self._data[offset:limit]
 
-    def get(self, offset, limit):
-        return self.data[offset:offset + limit]
+    def _delete(self, ids):
+        self.__data = filter(lambda x: not x['id'] in ids, self.__data)
+        run('')
 
 app = YubikeyVal()

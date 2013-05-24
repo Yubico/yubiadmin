@@ -1,0 +1,13 @@
+<legend>Confirm deletion</legend>
+<p>Are you sure you wish to delete the following {{ item_name | lower }}?</p>
+<ul>
+	{% for item in items %}
+	<li>{{ item.label }}</li>
+	{% endfor %}
+</ul>
+
+<form action="delete_confirm" method="post">
+	<input type="submit" class="btn btn-danger" value="Delete {{ item_name | lower }}" />
+	<input type="hidden" name="delete" value="{{ ids }}" />
+	<a href="{{ base_url }}" class="btn">Cancel</a>
+</form>

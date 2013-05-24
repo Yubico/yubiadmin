@@ -127,16 +127,23 @@ class CollectionApp(App):
     columns = []
     template = 'table'
     script = 'table'
+    selectable = True
 
-    def size(self):
+    def _size(self):
         return 0
 
-    def get(self, offset, limit):
+    def _get(self, offset=0, limit=None):
         return [{}]
+
+    def _select(self, ids):
+        return [x for x in self._get() if x['id'] in ids]
+
+    def _delete(self, ids):
+        raise Exception('Not implemented!')
 
     def __call__(self, request):
         sub_cmd = request.path_info_pop()
-        if sub_cmd and hasattr(self, sub_cmd):
+        if sub_cmd and not sub_cmd.startswith('_') and hasattr(self, sub_cmd):
             return getattr(self, sub_cmd)(request)
         else:
             match = ITEM_RANGE.match(sub_cmd) if sub_cmd else None
@@ -149,8 +156,8 @@ class CollectionApp(App):
         return self.list(offset, limit)
 
     def list(self, offset, limit):
-        items = self.get(offset, limit)
-        total = self.size()
+        items = self._get(offset, limit)
+        total = self._size()
         shown = (min(offset + 1, total), min(offset + limit, total))
         if offset > 0:
             st = max(0, offset - limit)
@@ -168,4 +175,15 @@ class CollectionApp(App):
             self.template, script=self.script, items=items, offset=offset,
             limit=limit, total=total, shown='%d-%d' % shown, prev=prev,
             next=next, base_url=self.base_url, caption=self.caption,
-            cols=self.columns, item_name=self.item_name)
+            cols=self.columns, item_name=self.item_name,
+            selectable=self.selectable)
+
+    def delete(self, request):
+        ids = [x[5:] for x in request.params if request.params[x] == 'on']
+        items = self._select(ids)
+        return render('table_delete', ids=','.join(ids), items=items,
+                      item_name=self.item_name, base_url=self.base_url)
+
+    def delete_confirm(self, request):
+        self._delete(request.params['delete'].split(','))
+        return self.redirect(self.base_url)

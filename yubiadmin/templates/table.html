@@ -1,16 +1,21 @@
-{% macro header(cols, next=None, prev=None, shown=0, total=0, item_name='Items') %}
+{% macro header(cols, next=None, prev=None, shown=0, total=0, item_name='Items', selectable=True) %}
 <thead>
 	<tr>
+		{% if selectable %}
+		{% set width = 95 %}
 		<th style="width: 5%">
 			<input type="checkbox" id="toggle_all" />
 		</th>
+		{% else %}
+		{% set width = 100 %}
+		{% endif %}
 		{% for col in cols %}
 		<th style="width: 15%">
 			{{ col }}
 		</th>
 		{% endfor %}
 		{% set col_len = cols|length %}
-		<th style="width: {{ 95 - col_len * 15 }}%; text-align:right;">
+		<th style="width: {{ width - col_len * 15 }}%; text-align:right;">
 			{{ item_name }} {{ shown }} of {{ total }}
 			&nbsp;
 			<div class="btn-group">
@@ -30,11 +35,13 @@
 </thead>
 {% endmacro %}
 
-{% macro body(cols, items) %}
+{% macro body(cols, items, selectable=True) %}
 <tbody>
 	{% for item in items %}
 	<tr>
+		{% if selectable %}
 		<td><input type="checkbox" name="item/{{ item.id }}"/></td>
+		{% endif %}
 		{% for col in cols %}
 		<td{% if loop.last %} colspan="2"{% endif %}>{{ item[col] }}</td>
 		{% endfor %}
@@ -43,15 +50,14 @@
 </tbody>
 {% endmacro %}
 
-{% macro table(cols, items, caption=None, next=None, prev=None, shown=0, total=0, item_name='Items') %}
+{% macro table(cols, items, caption=None, next=None, prev=None, shown=0, total=0, item_name='Items', selectable=True) %}
 <table class="table table-striped table-condensed">
 	{% if caption %}
 	<caption>{{ caption }}</caption>
 	{% endif %}
-	{{ header(cols, next, prev, shown, total, item_name) }}
-	{{ body(cols, items) }}
+	{{ header(cols, next, prev, shown, total, item_name, selectable) }}
+	{{ body(cols, items, selectable) }}
 </table>
 {% endmacro %}
 
-
-{{ table(cols, items, caption, next, prev, shown, total, item_name) }}
+{{ table(cols, items, caption, next, prev, shown, total, item_name, selectable) }}
