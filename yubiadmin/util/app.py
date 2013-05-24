@@ -128,6 +128,7 @@ class CollectionApp(App):
     template = 'table'
     script = 'table'
     selectable = True
+    max_limit = 100
 
     def _size(self):
         return 0
@@ -155,6 +156,7 @@ class CollectionApp(App):
                 return self.list()
 
     def list(self, offset=0, limit=10):
+        limit = min(self.max_limit, limit)
         items = self._get(offset, limit)
         total = self._size()
         shown = (min(offset + 1, total), min(offset + limit, total))
