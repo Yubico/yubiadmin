@@ -317,7 +317,7 @@ class YubikeyValClients(CollectionApp):
         status, output = run('ykval-gen-clients')
         print 'STATUS: %r' % status
         if status == 0:
-            parts = [x.trim() for x in output.split(',')]
+            parts = [x.strip() for x in output.split(',')]
             return render('val/client_created', client_id=parts[0],
                           api_key=parts[1])
         resp = self.list()
