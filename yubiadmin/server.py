@@ -38,7 +38,7 @@ def inspect_app(app):
     desc = desc.strip()
     sections = [{
         'name': section,
-        'title': getattr(app, section).__doc__.strip(),
+        'title': (getattr(app, section).__doc__ or section).strip(),
         'advanced': bool(getattr(getattr(app, section), 'advanced', False))
     } for section in app.sections]
 

@@ -239,9 +239,6 @@ class CreateUserForm(Form):
         super(CreateUserForm, self).__init__(**kwargs)
         self.auth = auth
 
-    def load(self):
-        pass
-
     def save(self):
         self.auth.create_user(self.username.data, self.password.data)
         self.auth.commit()

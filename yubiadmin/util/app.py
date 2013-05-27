@@ -70,7 +70,7 @@ def render(tmpl, **kwargs):
 
 def populate_forms(forms, data):
     if not data:
-        for form in forms:
+        for form in filter(lambda x: hasattr(x, 'load'), forms):
             form.load()
     else:
         errors = False
@@ -78,7 +78,7 @@ def populate_forms(forms, data):
             form.process(data)
             errors = not form.validate() or errors
         if not errors:
-            for form in forms:
+            for form in filter(lambda x: hasattr(x, 'save'), forms):
                 form.save()
 
 
@@ -94,7 +94,7 @@ class App(object):
                      success_msg='Settings updated!', **kwargs):
         alerts = []
         if not request.params:
-            for form in forms:
+            for form in filter(lambda x: hasattr(x, 'load'), forms):
                 form.load()
         else:
             errors = False
@@ -105,7 +105,7 @@ class App(object):
                 try:
                     if success_msg:
                         alerts = [{'type': 'success', 'title': success_msg}]
-                    for form in forms:
+                    for form in filter(lambda x: hasattr(x, 'save'), forms):
                         form.save()
                 except Exception as e:
                     alerts = [{'type': 'error', 'title': 'Error:',

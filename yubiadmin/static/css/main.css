@@ -31,6 +31,10 @@ caption {
 	white-space: pre-line;
 }
 
+span.message {
+	white-space: pre-line;
+}
+
 a {
 	color: #8bc53f;
 }
