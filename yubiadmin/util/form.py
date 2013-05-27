@@ -93,7 +93,7 @@ class FileForm(ConfigForm):
     Form that displays the entire content of a file.
     """
     content = TextAreaField('File')
-    attrs = {'content': {'class': 'span9 code', 'rows': 25}}
+    attrs = {'content': {'class': 'span9 code editor', 'rows': 25}}
 
     class Handler(object):
         def read(self, content):
