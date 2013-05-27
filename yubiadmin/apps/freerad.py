@@ -25,17 +25,21 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from yubiadmin.util.app import App, render
+from yubiadmin.util.app import App, CollectionApp, render
 from yubiadmin.util.system import run, invoke_rc_d
+from yubiadmin.util.form import FileForm
+from yubiadmin.util.config import parse_block
 from wtforms import Form
 from wtforms.fields import TextField
 import os
+import re
 
 __all__ = [
     'app'
 ]
 
 CLIENTS_CONFIG_FILE = '/etc/freeradius/clients.conf'
+CLIENTS_CONFIG_FILE = '/home/dain/yubico/working/clients.conf'
 
 
 def is_freerad_running():
@@ -47,8 +51,11 @@ class RadTestForm(Form):
     legend = 'RADIUS test'
     description = """
     This utility allows you to test authentication against the RADIUS server
-    using the credentials entered below.
+    using the credentials entered below. By default there will be a client with
+    the client secret: testing123, though you can change this under the RADIUS
+    Clients tab.
     """
+    client_secret = TextField('Client Secret', default='testing123')
     username = TextField('Username')
     password = TextField('Password')
 
@@ -67,6 +74,9 @@ class FreeRadius(App):
     def disabled(self):
         return not os.path.isdir('/etc/freeradius')
 
+    def __init__(self):
+        self._clients = RadiusClients()
+
     def general(self, request):
         """
         General
@@ -78,7 +88,9 @@ class FreeRadius(App):
             form.process(request.params)
             username = form.username.data
             password = form.password.data
-            cmd = 'radtest %s %s localhost 0 testing123' % (username, password)
+            secret = form.client_secret.data
+
+            cmd = 'radtest %s %s localhost 0 %s' % (username, password, secret)
             status, output = run(cmd)
             alert = {'title': 'Command: %s' % cmd}
             alert['message'] = '<pre style="white-space: pre-wrap;">%s</pre>' \
@@ -96,11 +108,11 @@ class FreeRadius(App):
         return render('freerad/general', form=form, alerts=alerts,
                       running=is_freerad_running())
 
-    def clients(self, request):
+    def _clients(self, request):
         """
         RADIUS clients
         """
-        return ''
+        return self._clients(request)
 
     def server(self, request):
         if request.params['server'] == 'toggle':
@@ -113,5 +125,86 @@ class FreeRadius(App):
 
         return self.redirect('/%s/general' % self.name)
 
+    def clients(self, request):
+        """
+        RADIUS Clients
+        """
+        return self.render_forms(request, [
+            FileForm(CLIENTS_CONFIG_FILE, 'clients.conf',
+                     'Changes require the FreeRADIUS server to be restarted.')
+        ])
+
+
+CLIENT = re.compile('client\s+(.+)\s+{')
+ATTRIBUTE = re.compile('([^\s]+)\s+=\s+([^\s]+)')
+
+
+def parse_client(name, content):
+    data = {}
+    for line in content.splitlines():
+        line = line.split('#', 1)[0].strip()
+        match = ATTRIBUTE.match(line)
+        if match:
+            key = match.group(1)
+            value = match.group(2)
+            data[key] = value
+    client = {
+        'Name': name or data.get('shortname', data.get('ipaddr')),
+        'data': data,
+        'Attributes': ', '.join(['%s=%s' % (k, v) for (k, v) in data.items()])
+    }
+    return client
+
+
+def parse_clients(content):
+    lines = content.splitlines()
+    index = 0
+    skip = 0
+    for line in lines:
+        if skip > 0:
+            skip -= 1
+            continue
+
+        match = CLIENT.match(line.strip())
+        if match:
+            name = match.group(1)
+            c_content = parse_block('\n'.join(lines[index + 1:]), '{', '}')
+            client = parse_client(name, c_content)
+            skip = len(c_content.splitlines())
+            client['id'] = index
+            client['start'] = index
+            client['end'] = index + skip + 2
+            index += skip
+            yield client
+
+        index += 1
+
+
+class RadiusClients(CollectionApp):
+    base_url = '/freerad/clients'
+    item_name = 'Clients'
+    caption = 'RADIUS Clients'
+    columns = ['Name', 'Attributes']
+    template = 'freerad/client_list'
+
+    def _get(self, offset=0, limit=None):
+        with open(CLIENTS_CONFIG_FILE, 'r') as f:
+            self.content = f.read()
+
+        clients = list(parse_clients(self.content))
+        if limit:
+            limit += offset
+        return clients[offset:limit]
+
+    def _delete(self, ids):
+        ids = map(int, ids)
+        clients = filter(lambda x: x['id'] in ids, self._get())
+        lines = self.content.splitlines()
+
+        for client in reversed(clients):
+            del lines[client['start']:client['end']]
+
+        with open(CLIENTS_CONFIG_FILE, 'w') as f:
+            f.write(os.linesep.join(lines))
 
 app = FreeRadius()

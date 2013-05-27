@@ -131,7 +131,7 @@ class CollectionApp(App):
     max_limit = 100
 
     def _size(self):
-        return 0
+        return len(self._get())
 
     def _get(self, offset=0, limit=None):
         return [{}]

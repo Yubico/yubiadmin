@@ -108,6 +108,7 @@ class FileForm(ConfigForm):
         self.legend = legend
         self.description = description
         super(FileForm, self).__init__(*args, **kwargs)
+        self.content.label.text = 'File: %s' % filename
 
 
 class DBConfigForm(ConfigForm):

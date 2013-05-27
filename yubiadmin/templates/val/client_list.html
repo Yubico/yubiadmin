@@ -1,8 +1,5 @@
 {% from 'table.html' import table %}
 
-<form action="/val/clients/delete" method="post">
-	
 {{ table(cols, items, caption, next, prev, shown, total, item_name, selectable) }}
 
 <a href="/val/clients/create" class="btn btn-primary pull-right">Generate new API client</a>
-</form>
