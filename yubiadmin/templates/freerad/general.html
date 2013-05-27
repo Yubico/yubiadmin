@@ -1,7 +1,31 @@
 {% from 'form.html' import form_fieldset %}
 
+{% if running %}
+	{% set status_cls = 'label label-success' %}
+	{% set status_txt = 'Running' %}
+	{% set toggle_txt = 'Stop FreeRADIUS' %}
+	{% set restart_cls = 'btn' %}
+{% else %}
+	{% set status_cls = 'label label-important' %}
+	{% set status_txt = 'Not Running' %}
+	{% set toggle_txt = 'Start FreeRADIUS' %}
+	{% set restart_cls = 'btn disabled' %}
+	{% set restart_attrs = 'disabled="disabled"' %}
+{% endif %}
+
+<div>
+	<legend>FreeRADIUS Server</legend>
+		Current status: <span class="{{ status_cls }}">{{ status_txt }}</span>
+	</p>
+	<form action="server" method="post">
+		<button name="server" value="toggle" class="btn">{{ toggle_txt }}</button>
+		<button name="server" value="restart" class="{{ restart_cls }}" {{ restart_attrs }}>Restart FreeRADIUS</button>
+	</form>
+</div>
+
+
 <form action="/freerad/general" method="post">
 	{{ form_fieldset(form) }}
-	<input type="submit" class="btn" value="Test" />
+	<input type="submit" class="btn" value="Authenticate" />
 </form>
 
