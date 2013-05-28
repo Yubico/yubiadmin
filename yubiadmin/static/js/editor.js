@@ -1,5 +1,9 @@
 $(document).ready(function() {
-	$.getScript("http://rawgithub.com/ajaxorg/ace-builds/master/src-noconflict/ace.js", function(data, textStatus, jqxhr) {
+	$.ajaxSetup({cache: true});
+	$.getScript("/js/ace/ace.js", function(data, textStatus, jqxhr) {
+		ace.config.set("modePath", "/js/ace/");
+		ace.config.set("workerPath", "/js/ace/");
+		ace.config.set("themePath", "/js/ace/");
 		$('textarea.editor').each(function() {
 			var textarea = $(this);
 			var text = textarea.text();
@@ -8,6 +12,11 @@ $(document).ready(function() {
 			div.height(textarea.height());
 			div.text(text);
 			var editor = ace.edit(div.get(0));
+			editor.setTheme('ace/theme/chrome');
+			var mode = textarea.attr('ace-mode');
+			if(mode) {
+				editor.getSession().setMode('ace/mode/'+mode);
+			}
 			textarea.after(div);
 			textarea.hide();
 			editor.getSession().on('change', function(e) {

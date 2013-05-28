@@ -102,11 +102,13 @@ class FileForm(ConfigForm):
         def write(self, content, value):
             return value
 
-    def __init__(self, filename, legend=None, description=None, *args,
-                 **kwargs):
+    def __init__(self, filename, legend=None, description=None, lang=None,
+                 *args, **kwargs):
         self.config = FileConfig(filename, [('content', self.Handler())])
         self.legend = legend
         self.description = description
+        if lang:
+            self.attrs['content']['ace-mode'] = lang
         super(FileForm, self).__init__(*args, **kwargs)
         self.content.label.text = 'File: %s' % filename
 

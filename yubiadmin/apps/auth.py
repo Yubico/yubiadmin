@@ -31,7 +31,7 @@ from wtforms.fields import (SelectField, TextField, BooleanField, IntegerField,
                             PasswordField)
 from wtforms.widgets import PasswordInput
 from wtforms.validators import NumberRange, URL, EqualTo, Regexp, Optional
-from yubiadmin.util.app import App, CollectionApp, render
+from yubiadmin.util.app import App, CollectionApp
 from yubiadmin.util.config import (python_handler, python_list_handler,
                                    FileConfig)
 from yubiadmin.util.form import ConfigForm, FileForm, ListField
@@ -212,8 +212,8 @@ class YubiAuthApp(App):
         Advanced
         """
         return self.render_forms(request, [
-            FileForm(AUTH_CONFIG_FILE, 'Configuration')
-        ])
+            FileForm(AUTH_CONFIG_FILE, 'Configuration', lang='python')
+        ], script='editor')
 
     def users(self, request):
         """

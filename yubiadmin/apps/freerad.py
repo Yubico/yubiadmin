@@ -131,7 +131,8 @@ class FreeRadius(App):
         """
         return self.render_forms(request, [
             FileForm(CLIENTS_CONFIG_FILE, 'clients.conf',
-                     'Changes require the FreeRADIUS server to be restarted.')
+                     'Changes require the FreeRADIUS server to be restarted.',
+                     lang='ini')
         ], script='editor')
 
 
