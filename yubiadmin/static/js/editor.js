@@ -13,6 +13,10 @@ $(document).ready(function() {
 			div.text(text);
 			var editor = ace.edit(div.get(0));
 			editor.setTheme('ace/theme/chrome');
+			textarea.closest('form').bind('reset', function() {
+				editor.setValue(text);
+				editor.gotoLine(0);
+			});
 			var mode = textarea.attr('ace-mode');
 			if(mode) {
 				editor.getSession().setMode('ace/mode/'+mode);
