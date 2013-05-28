@@ -1,3 +1,8 @@
+* Version 0.1.2 (released 2013-05-28)
+
+  * Fixed "Reset form" button for Ace editors, which was broken by the last
+    release.
+
 * Version 0.1.1 (released 2013-05-28)
 
   * Added yubiadmin-config CLI tool.
