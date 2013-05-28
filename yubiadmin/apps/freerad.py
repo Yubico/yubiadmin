@@ -39,7 +39,6 @@ __all__ = [
 ]
 
 CLIENTS_CONFIG_FILE = '/etc/freeradius/clients.conf'
-CLIENTS_CONFIG_FILE = '/home/dain/yubico/working/clients.conf'
 
 
 def is_freerad_running():
