@@ -1,8 +1,8 @@
 <legend>Confirm deletion</legend>
 <p>Are you sure you wish to delete the following {{ item_name | lower }}?</p>
 <ul>
-	{% for item in items %}
-	<li>{{ item.label }}</li>
+	{% for label in labels %}
+	<li>{{ label }}</li>
 	{% endfor %}
 </ul>
 

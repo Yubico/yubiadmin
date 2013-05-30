@@ -71,6 +71,7 @@ auth_config = FileConfig(
         ('hsm_device', python_handler('YHSM_DEVICE', 'yhsm://localhost:5348')),
         ('db_config', python_handler('DATABASE_CONFIGURATION',
                                      'sqlite:///:memory:')),
+        ('user_registration', python_handler('ENABLE_USER_REGISTRATION', True))
     ]
 )
 
@@ -99,7 +100,14 @@ class SecurityForm(ConfigForm):
         'Allow Empty Passwords',
         description="""
         Allow users with no password to log in without providing a password.
-        When set to False, a user with no password will be unable to log in.
+        When not checked, a user with no password will be unable to log in.
+        """
+    )
+    user_registration = BooleanField(
+        'Enable User Registration',
+        description="""
+        Allow users to register themselves using the YubiAuth client interface.
+        When checked, accounts can be created <a href="/yubiauth/ui/">Here</a>.
         """
     )
     security_level = SelectField(
@@ -326,9 +334,10 @@ class YubiAuthUsers(CollectionApp):
             'YubiKeys': ', '.join(user.yubikeys.keys())
         }, users)
 
-    def _select(self, ids):
-        return self.auth.session.query(self.User.name, self.User.id) \
+    def _labels(self, ids):
+        users = self.auth.session.query(self.User.name) \
             .filter(self.User.id.in_(map(int, ids))).all()
+        return map(lambda x: x[0], users)
 
     def _delete(self, ids):
         self.auth.session.query(self.User) \

@@ -136,8 +136,8 @@ class CollectionApp(App):
     def _get(self, offset=0, limit=None):
         return [{}]
 
-    def _select(self, ids):
-        return [x for x in self._get() if x['id'] in ids]
+    def _labels(self, ids):
+        return [x['label'] for x in self._get() if x['id'] in ids]
 
     def _delete(self, ids):
         raise Exception('Not implemented!')
@@ -181,8 +181,8 @@ class CollectionApp(App):
 
     def delete(self, request):
         ids = [x[5:] for x in request.params if request.params[x] == 'on']
-        items = self._select(ids)
-        return render('table_delete', ids=','.join(ids), items=items,
+        labels = self._labels(ids)
+        return render('table_delete', ids=','.join(ids), labels=labels,
                       item_name=self.item_name, base_url=self.base_url)
 
     def delete_confirm(self, request):
