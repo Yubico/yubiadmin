@@ -34,8 +34,8 @@ import sys
 
 
 def inspect_app(app):
-    name = app.name or sys.modules[app.__module__].__file__.split('/')[-1] \
-        .rsplit('.', 1)[0]
+    name = getattr(app, 'name', None) or sys.modules[app.__module__].__file__ \
+        .split('/')[-1].rsplit('.', 1)[0]
 
     if app.__doc__:
         doc = app.__doc__.strip()

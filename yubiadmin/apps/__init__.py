@@ -26,10 +26,16 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import os
+import sys
 from importlib import import_module
 
 apps = []
 __all__ = ['apps']
+
+
+def get_name(app):
+    return getattr(app, 'name', None) or sys.modules[app.__module__].__file__ \
+        .split('/')[-1].rsplit('.', 1)[0]
 
 for filename in os.listdir(os.path.dirname(__file__)):
     if filename.endswith('.py') and not filename.startswith('__'):
