@@ -77,9 +77,6 @@ class FreeRadius(App):
         self._clients = RadiusClients()
 
     def general(self, request):
-        """
-        General
-        """
         alerts = []
         form = RadTestForm()
 
@@ -107,7 +104,7 @@ class FreeRadius(App):
         return render('freerad/general', form=form, alerts=alerts,
                       running=is_freerad_running())
 
-    def _clients(self, request):
+    def _unused_clients(self, request):
         """
         RADIUS clients
         """

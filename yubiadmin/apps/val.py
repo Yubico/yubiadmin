@@ -221,9 +221,6 @@ class YubikeyVal(App):
         self._clients = YubikeyValClients()
 
     def general(self, request):
-        """
-        General
-        """
         return self.render_forms(request, [SyncLevelsForm(), MiscForm()])
 
     def clients(self, request):
@@ -241,9 +238,6 @@ class YubikeyVal(App):
         return self.render_forms(request, [dbform])
 
     def synchronization(self, request):
-        """
-        Synchronization
-        """
         return self.render_forms(request, [DaemonForm(), SyncPoolForm()],
                                  template='val/synchronization',
                                  daemon_running=is_daemon_running())
@@ -266,9 +260,6 @@ class YubikeyVal(App):
         return self.render_forms(request, [KSMForm()])
 
     def advanced(self, request):
-        """
-        Advanced
-        """
         return self.render_forms(request, [
             FileForm(YKVAL_CONFIG_FILE, 'Configuration', lang='php')
         ], script='editor')

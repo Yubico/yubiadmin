@@ -198,15 +198,9 @@ class YubiAuthApp(App):
         return ['general', 'database', 'validation', 'users', 'advanced']
 
     def general(self, request):
-        """
-        General
-        """
         return self.render_forms(request, [SecurityForm(), HSMForm()])
 
     def database(self, request):
-        """
-        Database
-        """
         return self.render_forms(request, [DatabaseForm()])
 
     def validation(self, request):
@@ -216,9 +210,6 @@ class YubiAuthApp(App):
         return self.render_forms(request, [ValidationServerForm()])
 
     def advanced(self, request):
-        """
-        Advanced
-        """
         return self.render_forms(request, [
             FileForm(AUTH_CONFIG_FILE, 'Configuration', lang='python')
         ], script='editor')

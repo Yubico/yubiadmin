@@ -81,9 +81,6 @@ class YubiAdmin(App):
     sections = ['general']
 
     def general(self, request):
-        """
-        General
-        """
         return self.render_forms(request,
                                  [ConnectionForm(), CredentialsForm()],
                                  template='admin/general')

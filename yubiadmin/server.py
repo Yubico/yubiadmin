@@ -33,12 +33,20 @@ from yubiadmin.apps import apps
 
 
 def inspect_app(app):
-    doc = app.__doc__.strip()
-    title, desc = doc.split('\n', 1)
-    desc = desc.strip()
+    if app.__doc__:
+        doc = app.__doc__.strip()
+        if '\n' in doc:
+            title, desc = doc.split('\n', 1)
+            desc = desc.strip()
+        else:
+            title = desc = doc
+    else:
+        title = desc = app.__class__.__name__
+
     sections = [{
         'name': section,
-        'title': (getattr(app, section).__doc__ or section).strip(),
+        'title': (getattr(app, section).__doc__ or section.capitalize()
+                  ).strip(),
         'advanced': bool(getattr(getattr(app, section), 'advanced', False))
     } for section in app.sections]
 
