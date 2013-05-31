@@ -40,8 +40,6 @@ class YubikeyKsm(App):
 
     YubiKey KSM server
     """
-
-    name = 'ksm'
     sections = ['database']
 
     @property

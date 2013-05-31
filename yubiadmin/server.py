@@ -30,9 +30,13 @@ from webob.dec import wsgify
 from collections import OrderedDict
 from yubiadmin.util.app import render
 from yubiadmin.apps import apps
+import sys
 
 
 def inspect_app(app):
+    name = app.name or sys.modules[app.__module__].__file__.split('/')[-1] \
+        .rsplit('.', 1)[0]
+
     if app.__doc__:
         doc = app.__doc__.strip()
         if '\n' in doc:
@@ -51,7 +55,7 @@ def inspect_app(app):
     } for section in app.sections]
 
     return {
-        'name': app.name,
+        'name': name,
         'title': title,
         'description': desc,
         'sections': sections,
@@ -78,6 +82,10 @@ class YubiAdmin(object):
             raise exc.HTTPNotFound
 
         app, module = apps_data[module_name]
+
+        if module['disabled']:
+            raise exc.HTTPNotFound
+
         if not section_name:
             section_name = module['sections'][0]['name']
             raise exc.HTTPSeeOther(location=request.path + '/' + section_name)

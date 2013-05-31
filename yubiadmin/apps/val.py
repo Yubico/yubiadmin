@@ -208,8 +208,6 @@ class YubikeyVal(App):
 
     YubiKey OTP validation server
     """
-
-    name = 'val'
     sections = ['general', 'clients', 'database', 'synchronization', 'ksms',
                 'advanced']
 
