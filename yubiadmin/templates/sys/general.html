@@ -1,0 +1,17 @@
+<legend>System</legend>
+{% if updates %}
+<p>There are system updates available:<br/>
+<ul>
+	{% for update in updates %}
+	<li>{{ update }}</li>
+	{% endfor %}
+</ul>
+<a href="update" class="btn">Update System</a>
+</p>
+{% else %}
+<p>Your system is up to date</p>
+{% endif %}
+
+<legend>Restart</legend>
+<p>Restarting the system may take several minutes, during which this web interface will be unavailable.</p>
+<a href="reboot" class="btn btn-danger">Restart System</a>

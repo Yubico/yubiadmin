@@ -25,7 +25,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from webob import exc
+from webob import exc, Response
 from webob.dec import wsgify
 from collections import OrderedDict
 from yubiadmin.util.app import render
@@ -59,7 +59,8 @@ def inspect_app(app):
         'title': title,
         'description': desc,
         'sections': sections,
-        'disabled': bool(getattr(app, 'disabled', False))
+        'disabled': bool(getattr(app, 'disabled', False)),
+        'hidden': bool(getattr(app, 'hidden', False))
     }
 
 
@@ -95,6 +96,10 @@ class YubiAdmin(object):
 
         section = next((section for section in module['sections']
                        if section['name'] == section_name), None)
+
+        resp = getattr(app, section_name)(request)
+        if isinstance(resp, Response):
+            return resp
 
         return render(
             'app_base',

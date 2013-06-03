@@ -14,13 +14,13 @@
 			<div class="well">
 				<ul class="nav nav-list">
 					<li class="nav-header">Modules</li>
-					{% for mod in modules if not mod.disabled %}
+					{% for mod in modules if not mod.disabled and not mod.hidden %}
 					<li {% if module is defined and mod.name == module.name %}class="active"{% endif %} >
 						<a href="/{{ mod.name }}">{{ mod.title }}</a>
 					</li>
 					{% endfor %}
 
-					{% for mod in modules if mod.disabled %}
+					{% for mod in modules if mod.disabled and not mod.hidden %}
 					{% if loop.first %}
 					<li class="nav-header">Not installed</li>
 					{% endif %}

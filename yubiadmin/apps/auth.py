@@ -186,6 +186,7 @@ class YubiAuthApp(App):
 
     name = 'auth'
     sections = ['general', 'database', 'validation', 'advanced']
+    priority = 40
 
     @property
     def disabled(self):

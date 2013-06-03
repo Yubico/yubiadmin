@@ -68,6 +68,7 @@ class FreeRadius(App):
 
     name = 'freerad'
     sections = ['general', 'clients']
+    priority = 60
 
     @property
     def disabled(self):
