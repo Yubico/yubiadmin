@@ -37,6 +37,9 @@ __all__ = [
 ]
 
 
+UPGRADE_LOG = "/var/tmp/yubix-upgrade"
+
+
 def get_updates():
     s, o = run("apt-get upgrade -s | awk -F'[][() ]+' '/^Inst/{print $2}'")
     packages = o.splitlines()
@@ -53,20 +56,34 @@ def reboot():
 
 class Updater(object):
     def __init__(self):
-        self.proc = subprocess.Popen(['apt-get', '-y', 'dist-upgrade'],
-                                     stdout=subprocess.PIPE)
+        self.proc = subprocess.Popen('DEBIAN_FRONTEND=noninteractive '
+                                     'apt-get -y dist-upgrade -o '
+                                     'Dpkg::Options::="--force-confdef" -o '
+                                     'Dpkg::Options::="--force-confold" | '
+                                     'tee %s' % UPGRADE_LOG,
+                                     stdout=subprocess.PIPE, shell=True)
 
     def __iter__(self):
-        yield '<strong>Performing update, this may take a while...</strong>' \
-            '<br/>'
+        yield """
+        <script type="text/javascript">
+        function reload() {
+            window.location.replace('/sys');
+        }
+        window.onload = function() {
+            setTimeout(reload, 10000);
+        }
+        </script>
+        <strong>Performing update, this may take a while...</strong><br/>
+        <pre>
+        """
+
         while True:
             line = self.proc.stdout.readline()
             if line:
-                yield line + '<br />'
+                yield line
             else:
-                yield '<br /><strong>Update complete!</strong>'
-                yield '<script type="text/javascript">' \
-                    'window.location.replace("/sys");</script>'
+                yield '</pre><br /><strong>Update complete!</strong>'
+                yield '<script type="text/javascript">reload();</script>'
                 break
 
 
@@ -93,6 +110,10 @@ class SystemApp(App):
         return render('/sys/general', alerts=alerts, updates=get_updates())
 
     def update(self, request):
+        run('apt-get update')
+        return self.redirect('/sys')
+
+    def dist_upgrade(self, request):
         if get_updates():
             return Response(app_iter=Updater())
         else:
@@ -106,7 +127,7 @@ class SystemApp(App):
             timer = Timer(1, run, args=('reboot',))
             timer.start()
         alerts = [{'type': 'warn', 'message': 'Rebooting System...'}]
-        return self.render('/sys/general', alerts=alerts)
+        return render('/sys/general', alerts=alerts)
 
 
 app = SystemApp()

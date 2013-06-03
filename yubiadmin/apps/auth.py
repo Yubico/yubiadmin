@@ -107,7 +107,6 @@ class SecurityForm(ConfigForm):
         'Enable User Registration',
         description="""
         Allow users to register themselves using the YubiAuth client interface.
-        When checked, accounts can be created <a href="/yubiauth/ui/">Here</a>.
         """
     )
     security_level = SelectField(
