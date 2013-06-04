@@ -71,7 +71,9 @@ auth_config = FileConfig(
         ('hsm_device', python_handler('YHSM_DEVICE', 'yhsm://localhost:5348')),
         ('db_config', python_handler('DATABASE_CONFIGURATION',
                                      'sqlite:///:memory:')),
-        ('user_registration', python_handler('ENABLE_USER_REGISTRATION', True))
+        ('user_registration', python_handler('ENABLE_USER_REGISTRATION',
+                                             True)),
+        ('user_deletion', python_handler('ALLOW_USER_DELETE', False)),
     ]
 )
 
@@ -107,6 +109,13 @@ class SecurityForm(ConfigForm):
         'Enable User Registration',
         description="""
         Allow users to register themselves using the YubiAuth client interface.
+        """
+    )
+    user_deletion = BooleanField(
+        'Enable User Deletion',
+        description="""
+        Allow users to delete their own account using the YubiAuth client
+        interface.
         """
     )
     security_level = SelectField(
