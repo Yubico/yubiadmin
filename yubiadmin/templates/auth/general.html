@@ -1,0 +1,11 @@
+{% from 'form.html' import render_form %}
+
+<div>
+	<legend>Web Server</legend>
+	<span class="help-block">
+		For any changes to the settings below to take place, the web server will need to be reloaded.<br /><br />
+	</span>
+	<a href="reload" class="btn btn-danger">Reload web server</a>
+</div>
+
+{{ render_form(fieldsets, target) }}

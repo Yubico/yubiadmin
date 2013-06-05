@@ -32,6 +32,7 @@ from wtforms.fields import (SelectField, TextField, BooleanField, IntegerField,
 from wtforms.widgets import PasswordInput
 from wtforms.validators import NumberRange, URL, EqualTo, Regexp, Optional
 from yubiadmin.util.app import App, CollectionApp
+from yubiadmin.util.system import invoke_rc_d
 from yubiadmin.util.config import (python_handler, python_list_handler,
                                    FileConfig)
 from yubiadmin.util.form import ConfigForm, FileForm, ListField
@@ -207,7 +208,12 @@ class YubiAuthApp(App):
         return ['general', 'database', 'validation', 'users', 'advanced']
 
     def general(self, request):
-        return self.render_forms(request, [SecurityForm(), HSMForm()])
+        return self.render_forms(request, [SecurityForm(), HSMForm()],
+                                 template='auth/general')
+
+    def reload(self, request):
+        invoke_rc_d('apache2', 'reload')
+        return self.redirect('/auth/general')
 
     def database(self, request):
         return self.render_forms(request, [DatabaseForm()])
