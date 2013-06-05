@@ -107,7 +107,7 @@ class YubiAdmin(object):
             module=module,
             section=section,
             title='YubiAdmin - %s - %s' % (module_name, section_name),
-            page=getattr(app, section_name)(request)
+            page=resp
         )
 
 application = YubiAdmin()

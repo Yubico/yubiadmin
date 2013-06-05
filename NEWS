@@ -1,3 +1,7 @@
+* Version 0.1.4 (released 2013-06-05)
+
+  * Bugfix release: Fixed YubiAuth user creation broken in last release.
+
 * Version 0.1.3 (released 2013-06-05)
 
   * Added YubiX system app.
