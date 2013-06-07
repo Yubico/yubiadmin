@@ -7,11 +7,13 @@ $(document).ready(function() {
 
 	$(':checkbox').change(function() {
 		if($('tbody :checkbox:checked').length > 0) {
-			console.log('enable');
 			$('#delete_btn').removeAttr('disabled');
 		} else {
-			console.log('disable');
 			$('#delete_btn').attr('disabled', 'disabled');
 		}
 	});
+
+	if($('tbody :checkbox:checked').length > 0) {
+		$('#delete_btn').removeAttr('disabled');
+	}
 });
