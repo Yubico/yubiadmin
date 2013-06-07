@@ -56,7 +56,14 @@ class TemplateBinding(object):
         self.data.update(sub_binding.data)
         self.data[sub_variable] = sub_binding
 
+    @property
+    def prerendered(self):
+        self._rendered = str(self)
+        return self
+
     def __str__(self):
+        if hasattr(self, '_rendered'):
+            return self._rendered
         return self.template.render(self.data)
 
     @wsgify

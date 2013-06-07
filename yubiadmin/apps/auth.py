@@ -40,7 +40,7 @@ try:
     from yubiauth import YubiAuth
 except:
     YubiAuth = None
-
+User = None
 
 __all__ = [
     'app'
@@ -233,8 +233,14 @@ class YubiAuthApp(App):
         """
         Manage Users
         """
-        with YubiAuthUsers() as users:
-            return users(request)
+        global User
+        if User is None:
+            from yubiauth.core.model import User as _user
+            User = _user
+
+        with YubiAuth() as auth:
+            app = YubiAuthUsers(auth)
+            return app(request).prerendered
 
     # Pulls the tab to the right:
     advanced.advanced = True
@@ -249,13 +255,10 @@ class CreateUserForm(Form):
                            [EqualTo('password')],
                            widget=PasswordInput(hide_value=False))
 
-    def __init__(self, auth, **kwargs):
-        super(CreateUserForm, self).__init__(**kwargs)
-        self.auth = auth
-
     def save(self):
-        self.auth.create_user(self.username.data, self.password.data)
-        self.auth.commit()
+        with YubiAuth() as auth:
+            auth.create_user(self.username.data, self.password.data)
+            auth.commit()
         self.username.data = None
         self.password.data = None
         self.verify.data = None
@@ -270,18 +273,19 @@ class SetPasswordForm(Form):
                            [EqualTo('password')],
                            widget=PasswordInput(hide_value=False))
 
-    def __init__(self, user, auth, **kwargs):
+    def __init__(self, user_id, **kwargs):
         super(SetPasswordForm, self).__init__(**kwargs)
-        self.user = user
-        self.auth = auth
+        self.user_id = user_id
 
     def load(self):
         pass
 
     def save(self):
         if self.password.data:
-            self.user.set_password(self.password.data)
-            self.auth.commit()
+            with YubiAuth() as auth:
+                user = auth.get_user(self.user_id)
+                user.set_password(self.password.data)
+                auth.commit()
             self.password.data = None
             self.verify.data = None
 
@@ -292,19 +296,20 @@ class AssignYubiKeyForm(Form):
                        [Regexp(r'^[cbdefghijklnrtuv]{1,64}$'),
                            Optional()])
 
-    def __init__(self, user, auth, **kwargs):
+    def __init__(self, user_id, **kwargs):
         super(AssignYubiKeyForm, self).__init__(**kwargs)
-        self.user = user
-        self.auth = auth
+        self.user_id = user_id
 
     def load(self):
         pass
 
     def save(self):
         if self.assign.data:
-            self.user.assign_yubikey(self.assign.data)
+            with YubiAuth() as auth:
+                user = auth.get_user(self.user_id)
+                user.assign_yubikey(self.assign.data)
+                auth.commit()
             self.assign.data = None
-            self.auth.commit()
 
 
 class YubiAuthUsers(CollectionApp):
@@ -314,22 +319,14 @@ class YubiAuthUsers(CollectionApp):
     columns = ['Username', 'YubiKeys']
     template = 'auth/list'
 
-    def __init__(self):
-        from yubiauth.core.model import User as _user
-        self.User = _user
-        self.auth = YubiAuth()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, type, value, traceback):
-        del self.auth
+    def __init__(self, auth):
+        self.auth = auth
 
     def _size(self):
-        return self.auth.session.query(self.User).count()
+        return self.auth.session.query(User).count()
 
     def _get(self, offset=0, limit=None):
-        users = self.auth.session.query(self.User).order_by(self.User.name) \
+        users = self.auth.session.query(User).order_by(User.name) \
             .offset(offset).limit(limit)
 
         return map(lambda user: {
@@ -341,17 +338,17 @@ class YubiAuthUsers(CollectionApp):
         }, users)
 
     def _labels(self, ids):
-        users = self.auth.session.query(self.User.name) \
-            .filter(self.User.id.in_(map(int, ids))).all()
+        users = self.auth.session.query(User.name) \
+            .filter(User.id.in_(map(int, ids))).all()
         return map(lambda x: x[0], users)
 
     def _delete(self, ids):
-        self.auth.session.query(self.User) \
-            .filter(self.User.id.in_(map(int, ids))).delete('fetch')
+        self.auth.session.query(User) \
+            .filter(User.id.in_(map(int, ids))).delete('fetch')
         self.auth.commit()
 
     def create(self, request):
-        return self.render_forms(request, [CreateUserForm(self.auth)],
+        return self.render_forms(request, [CreateUserForm()],
                                  success_msg='User created!')
 
     def show(self, request):
@@ -361,11 +358,15 @@ class YubiAuthUsers(CollectionApp):
             del user.yubikeys[request.params['unassign']]
             self.auth.commit()
         msg = None
-        if 'password' in request.params:
+        if request.params.get('password', None):
             msg = 'Password set!'
+        elif request.params.get('assign', None):
+            msg = 'YubiKey assigned!'
+        elif request.params.get('unassign', None):
+            msg = 'YubiKey unassigned!'
         return self.render_forms(request,
-                                 [SetPasswordForm(user, self.auth),
-                                 AssignYubiKeyForm(user, self.auth)],
+                                 [SetPasswordForm(user.id),
+                                 AssignYubiKeyForm(user.id)],
                                  'auth/user', user=user,
                                  success_msg=msg)
 
