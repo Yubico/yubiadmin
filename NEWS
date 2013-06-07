@@ -1,3 +1,8 @@
+* Version 0.1.5 (released 2013-06-07)
+
+  * Fixed YubiAuth user management which sometimes failed due to database
+    connection issues.
+
 * Version 0.1.4 (released 2013-06-05)
 
   * Bugfix release: Fixed YubiAuth user creation broken in last release.
