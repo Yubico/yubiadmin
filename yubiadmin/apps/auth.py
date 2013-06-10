@@ -268,7 +268,6 @@ class YubiAuthApp(App):
         """
         form = ValidationServerForm()
         resp = self.render_forms(request, [form])
-        print 'Using: %s, %s' % (form.client_id.data, form.client_secret)
         if form.client_id.data == YKVAL_DEFAULT_ID and \
                 form.client_secret.data == YKVAL_DEFAULT_SECRET:
             resp.data['alerts'].append(
