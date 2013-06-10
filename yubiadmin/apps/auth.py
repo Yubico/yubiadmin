@@ -258,7 +258,6 @@ class CreateUserForm(Form):
     def save(self):
         with YubiAuth() as auth:
             auth.create_user(self.username.data, self.password.data)
-            auth.commit()
         self.username.data = None
         self.password.data = None
         self.verify.data = None
@@ -285,7 +284,6 @@ class SetPasswordForm(Form):
             with YubiAuth() as auth:
                 user = auth.get_user(self.user_id)
                 user.set_password(self.password.data)
-                auth.commit()
             self.password.data = None
             self.verify.data = None
 
@@ -308,7 +306,6 @@ class AssignYubiKeyForm(Form):
             with YubiAuth() as auth:
                 user = auth.get_user(self.user_id)
                 user.assign_yubikey(self.assign.data)
-                auth.commit()
             self.assign.data = None
 
 
@@ -345,7 +342,6 @@ class YubiAuthUsers(CollectionApp):
     def _delete(self, ids):
         self.auth.session.query(User) \
             .filter(User.id.in_(map(int, ids))).delete('fetch')
-        self.auth.commit()
 
     def create(self, request):
         return self.render_forms(request, [CreateUserForm()],
@@ -356,7 +352,6 @@ class YubiAuthUsers(CollectionApp):
         user = self.auth.get_user(id)
         if 'unassign' in request.params:
             del user.yubikeys[request.params['unassign']]
-            self.auth.commit()
         msg = None
         if request.params.get('password', None):
             msg = 'Password set!'
@@ -367,7 +362,7 @@ class YubiAuthUsers(CollectionApp):
         return self.render_forms(request,
                                  [SetPasswordForm(user.id),
                                  AssignYubiKeyForm(user.id)],
-                                 'auth/user', user=user,
+                                 'auth/user', user=user.data,
                                  success_msg=msg)
 
 
