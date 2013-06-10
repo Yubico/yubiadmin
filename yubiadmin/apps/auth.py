@@ -26,16 +26,19 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import os
+import requests
 from wtforms import Form
 from wtforms.fields import (SelectField, TextField, BooleanField, IntegerField,
                             PasswordField)
 from wtforms.widgets import PasswordInput
-from wtforms.validators import NumberRange, URL, EqualTo, Regexp, Optional
+from wtforms.validators import (NumberRange, URL, EqualTo, Regexp, Optional,
+                                Email)
 from yubiadmin.util.app import App, CollectionApp
 from yubiadmin.util.system import invoke_rc_d
 from yubiadmin.util.config import (python_handler, python_list_handler,
                                    FileConfig)
 from yubiadmin.util.form import ConfigForm, FileForm, ListField
+import logging as log
 try:
     from yubiauth import YubiAuth
 except:
@@ -55,15 +58,17 @@ YKVAL_SERVERS = [
     'https://api4.yubico.com/wsapi/2.0/verify',
     'https://api5.yubico.com/wsapi/2.0/verify'
 ]
+YKVAL_DEFAULT_ID = 11004
+YKVAL_DEFAULT_SECRET = '5Vm3Zp2mUTQHMo1DeG9tdojpc1Y='
 
 
 auth_config = FileConfig(
     AUTH_CONFIG_FILE,
     [
         ('server_list', python_list_handler('YKVAL_SERVERS', YKVAL_SERVERS)),
-        ('client_id', python_handler('YKVAL_CLIENT_ID', 11004)),
+        ('client_id', python_handler('YKVAL_CLIENT_ID', YKVAL_DEFAULT_ID)),
         ('client_secret', python_handler('YKVAL_CLIENT_SECRET',
-                                         '5Vm3Zp2mUTQHMo1DeG9tdojpc1Y=')),
+                                         YKVAL_DEFAULT_SECRET)),
         ('auto_provision', python_handler('AUTO_PROVISION', True)),
         ('allow_empty', python_handler('ALLOW_EMPTY_PASSWORDS', False)),
         ('security_level', python_handler('SECURITY_LEVEL', 1)),
@@ -186,6 +191,45 @@ class ValidationServerForm(ConfigForm):
         """)
 
 
+class GetApiKeyForm(Form):
+    legend = 'Get a YubiCloud API key'
+    description = """
+    To validate YubiKey OTPS against the YubiCloud, you need to get a free API
+    key. You need to authenticate yourself using a Yubikey One-Time Password
+    and provide your e-mail address as a reference.
+    """
+    email = TextField('E-mail address', [Email()])
+    otp = TextField('YubiKey OTP', [Regexp(r'^[cbdefghijklnrtuv]{1,64}$')])
+    attrs = {'otp': {'class': 'input-xxlarge'}}
+
+    @staticmethod
+    def extract_param(matches, predicate):
+        while len(matches) > 0:
+            elem = matches.pop(0)
+            if predicate(elem):
+                return elem
+
+    def save(self):
+        email = self.email.data
+        otp = self.otp.data
+        log.info('Attempting to register a new YubiCloud API key. '
+                 'Email: %s, OTP: %s' % (email, otp))
+        response = requests.post(
+            'https://upgrade.yubico.com/getapikey/?format=json', data=
+            {'email': email, 'otp': otp})
+        data = response.json()
+        if data['status']:
+            log.info('Registered YubiCloud Client with ID: %d', data['id'])
+            auth_config.read()
+            auth_config['client_id'] = data['id']
+            auth_config['client_secret'] = data['key']
+            auth_config.commit()
+        else:
+            log.error('Failed registering new YubiCloud client: %s',
+                      data['error'])
+            raise Exception(data['error'])
+
+
 class YubiAuthApp(App):
     """
     YubiAuth
@@ -222,7 +266,25 @@ class YubiAuthApp(App):
         """
         Validation Server(s)
         """
-        return self.render_forms(request, [ValidationServerForm()])
+        form = ValidationServerForm()
+        resp = self.render_forms(request, [form])
+        print 'Using: %s, %s' % (form.client_id.data, form.client_secret)
+        if form.client_id.data == YKVAL_DEFAULT_ID and \
+                form.client_secret.data == YKVAL_DEFAULT_SECRET:
+            resp.data['alerts'].append(
+                {
+                    'type': 'warning',
+                    'title': 'WARNING: Default Client ID used!<br />',
+                    'message': 'As the default key is publically known, it is '
+                    'not as secure as using a unique API key.\n'
+                    '<a href="/auth/getapikey" class="btn btn-primary">'
+                    'Generate unique API Key</a>'
+                })
+        return resp
+
+    def getapikey(self, request):
+        return self.render_forms(request, [GetApiKeyForm()], success_msg=
+                                 "API Key registered!")
 
     def advanced(self, request):
         return self.render_forms(request, [

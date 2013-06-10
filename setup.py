@@ -43,7 +43,7 @@ setup(
     include_package_data=True,
     scripts=['bin/yubiadmin', 'bin/yubiadmin-config'],
     setup_requires=['nose>=1.0'],
-    install_requires=['webob', 'Jinja2', 'WTForms'],
+    install_requires=['webob', 'Jinja2', 'WTForms', 'requests'],
     test_suite='nose.collector',
     tests_require=[''],
     cmdclass={'release': release},
