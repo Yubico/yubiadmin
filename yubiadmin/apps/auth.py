@@ -38,6 +38,7 @@ from yubiadmin.util.system import invoke_rc_d
 from yubiadmin.util.config import (python_handler, python_list_handler,
                                    FileConfig)
 from yubiadmin.util.form import ConfigForm, FileForm, ListField
+from yubiadmin.apps.dashboard import panel
 import logging as log
 try:
     from yubiauth import YubiAuth
@@ -230,6 +231,12 @@ class GetApiKeyForm(Form):
             raise Exception(data['error'])
 
 
+def using_default_client():
+    auth_config.read()
+    return auth_config['client_id'] == YKVAL_DEFAULT_ID and \
+        auth_config['client_secret'] == YKVAL_DEFAULT_SECRET
+
+
 class YubiAuthApp(App):
     """
     YubiAuth
@@ -251,6 +258,12 @@ class YubiAuthApp(App):
             return ['general', 'database', 'validation', 'advanced']
         return ['general', 'database', 'validation', 'users', 'advanced']
 
+    @property
+    def dash_panels(self):
+        if using_default_client():
+            yield panel('YubiAuth', 'Using default YubiCloud client!',
+                        '/%s/validation' % self.name, 'danger')
+
     def general(self, request):
         return self.render_forms(request, [SecurityForm(), HSMForm()],
                                  template='auth/general')
@@ -268,8 +281,7 @@ class YubiAuthApp(App):
         """
         form = ValidationServerForm()
         resp = self.render_forms(request, [form])
-        if form.client_id.data == YKVAL_DEFAULT_ID and \
-                form.client_secret.data == YKVAL_DEFAULT_SECRET:
+        if using_default_client():
             resp.data['alerts'].append(
                 {
                     'type': 'warning',

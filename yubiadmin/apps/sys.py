@@ -31,6 +31,7 @@ from webob import Response
 from threading import Timer
 from yubiadmin.util.app import App, render
 from yubiadmin.util.system import run
+from yubiadmin.apps.dashboard import panel
 
 __all__ = [
     'app'
@@ -96,11 +97,34 @@ class SystemApp(App):
 
     @property
     def disabled(self):
-        return not os.path.isdir('/usr/share/yubix')
+        #return not os.path.isdir('/usr/share/yubix')
+        return False
 
     @property
     def hidden(self):
         return self.disabled
+
+    @property
+    def dash_panels(self):
+        if needs_restart():
+            yield panel('System', 'System restart required', level='danger')
+
+        updates = len(get_updates())
+        if updates > 0:
+            yield panel(
+                'System',
+                'There are <strong>%d</strong> updates available' % updates,
+                '/%s/general' % self.name,
+                'info'
+            )
+
+        _, result = run('uptime')
+        time, rest = [x.strip() for x in result.split('up', 1)]
+        parts = [x.strip() for x in rest.split(',')]
+        uptime = parts[0] if not 'days' in parts[0] else '%s, %s' % \
+            tuple(parts[:2])
+        yield panel('System', 'System time: %s<br />Uptime: %s' %
+                   (time, uptime), level='info')
 
     def general(self, request):
         alerts = []

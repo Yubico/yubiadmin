@@ -1,0 +1,46 @@
+{% macro render_panel(panel) %}
+{% if panel.level == 'danger' %}
+	{% set icon = "icon-exclamation-sign" %}
+{% elif panel.level == 'info' %}
+	{% set icon = "icon-info-sign" %}
+{% elif panel.level == 'success' %}
+	{% set icon = "icon-ok-sign" %}
+{% else %}
+	{% set icon = "icon-question-sign" %}
+{% endif %}
+<div class="alert{% if panel.level %} alert-{{ panel.level }}{% endif %}">
+	<i class="{{ icon }}"></i>
+	{% if panel.link %}
+	<a href="{{ panel.link }}"><strong>{{ panel.title }}</strong></a>
+	{% else %}
+	<strong>{{ panel.title }}</strong>
+	{% endif %}
+	<br />
+	{{ panel.content }}
+</div>
+{% endmacro %}
+
+<h2>Dashboard</h2>
+<div class="row-fluid">
+	<div class="span4">
+		{% for panel in panels %}
+		{% if loop.index0 % 3 == 0 %}
+		{{ render_panel(panel) }}
+		{% endif %}
+		{% endfor %}
+	</div>
+	<div class="span4">
+		{% for panel in panels %}
+		{% if loop.index0 % 3 == 1 %}
+		{{ render_panel(panel) }}
+		{% endif %}
+		{% endfor %}
+	</div>
+	<div class="span4">
+		{% for panel in panels %}
+		{% if loop.index0 % 3 == 2 %}
+		{{ render_panel(panel) }}
+		{% endif %}
+		{% endfor %}
+	</div>
+</div>

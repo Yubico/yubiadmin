@@ -34,6 +34,7 @@ from yubiadmin.util.config import (RegexHandler, FileConfig, php_inserter,
                                    parse_block, strip_comments, strip_quotes)
 from yubiadmin.util.form import ConfigForm, FileForm, DBConfigForm, ListField
 from yubiadmin.util.system import invoke_rc_d, run
+from yubiadmin.apps.dashboard import panel
 
 __all__ = [
     'app'
@@ -214,6 +215,18 @@ class YubikeyVal(App):
     @property
     def disabled(self):
         return not os.path.isfile(YKVAL_CONFIG_FILE)
+
+    @property
+    def dash_panels(self):
+        if not is_daemon_running():
+            ykval_config.read()
+            if len(ykval_config['sync_pool']) > 0:
+                yield panel('YubiKey Validation Server',
+                            'The sync daemon is NOT running, '
+                            'though the sync pool is not empty!',
+                            '/%s/synchronization' % self.name,
+                            'danger'
+                            )
 
     def __init__(self):
         self._clients = YubikeyValClients()

@@ -5,7 +5,7 @@
 
 	<div class="row">
 		<div class="span12">
-			<h1>YubiADMIN</h1>
+			<h1><a href="/">YubiADMIN</a></h1>
 		</div>
 	</div>
 	
@@ -13,6 +13,7 @@
 		<div class="span3">
 			<div class="well">
 				<ul class="nav nav-list">
+					<li {% if module is defined and module.name == 'dashboard' %}class="active"{% endif %}><a href="/">Dashboard</a></li>
 					<li class="nav-header">Modules</li>
 					{% for mod in modules if not mod.disabled and not mod.hidden %}
 					<li {% if module is defined and mod.name == module.name %}class="active"{% endif %} >

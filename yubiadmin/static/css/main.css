@@ -49,6 +49,22 @@ a.disabled, a.disabled:hover {
 	color: #999999;
 }
 
+.alert > a {
+	color: #c09853;
+}
+
+.alert-info > a {
+	color: #3a87ad;
+}
+
+.alert-danger > a {
+	color: #b94a48;
+}
+
+.alert-success > a {
+	color: #468847;
+}
+
 .btn-primary {
 	background-color: #9edb48;
 	color: #ffffff;

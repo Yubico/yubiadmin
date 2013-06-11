@@ -29,6 +29,7 @@ from yubiadmin.util.app import App, CollectionApp, render
 from yubiadmin.util.system import run, invoke_rc_d
 from yubiadmin.util.form import FileForm
 from yubiadmin.util.config import parse_block
+from yubiadmin.apps.dashboard import panel
 from wtforms import Form
 from wtforms.fields import TextField
 import os
@@ -73,6 +74,15 @@ class FreeRadius(App):
     @property
     def disabled(self):
         return not os.path.isdir('/etc/freeradius')
+
+    @property
+    def dash_panels(self):
+        running = is_freerad_running()
+        yield panel('FreeRADIUS',
+                    'FreeRadius server is %s' %
+                    ('running' if running else 'stopped'),
+                    '/%s/general' % self.name,
+                    'success' if running else 'danger')
 
     def __init__(self):
         self._clients = RadiusClients()

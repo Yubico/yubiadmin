@@ -64,7 +64,7 @@ class YubiAdmin(object):
         modules = [data for (_, data) in apps_data.values()]
 
         if not module_name:
-            return render('index', modules=modules)
+            module_name = 'dashboard'
 
         if not module_name in apps_data:
             raise exc.HTTPNotFound

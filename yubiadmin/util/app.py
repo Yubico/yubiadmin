@@ -98,14 +98,15 @@ class App(object):
 
     @property
     def name(self):
-        return sys.modules[self.__module__].__file__.split('/')[-1] \
-            .rsplit('.', 1)[0]
+        self.__class__.name = sys.modules[self.__module__].__file__ \
+            .split('/')[-1].rsplit('.', 1)[0]
+        return self.name
 
     def __call__(self, request):
         section_name = request.path_info_pop()
 
         if not section_name:
-            section_name = self.sections[0]
+            return self.redirect('/%s/%s' % (self.name, self.sections[0]))
 
         if not hasattr(self, section_name):
             raise exc.HTTPNotFound
