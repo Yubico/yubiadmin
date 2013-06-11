@@ -25,18 +25,14 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from webob import exc, Response
+from webob import exc
 from webob.dec import wsgify
 from collections import OrderedDict
 from yubiadmin.util.app import render
 from yubiadmin.apps import apps
-import sys
 
 
 def inspect_app(app):
-    name = getattr(app, 'name', None) or sys.modules[app.__module__].__file__ \
-        .split('/')[-1].rsplit('.', 1)[0]
-
     if app.__doc__:
         doc = app.__doc__.strip()
         if '\n' in doc:
@@ -47,18 +43,10 @@ def inspect_app(app):
     else:
         title = desc = app.__class__.__name__
 
-    sections = [{
-        'name': section,
-        'title': (getattr(app, section).__doc__ or section.capitalize()
-                  ).strip(),
-        'advanced': bool(getattr(getattr(app, section), 'advanced', False))
-    } for section in app.sections]
-
     return {
-        'name': name,
+        'name': app.name,
         'title': title,
         'description': desc,
-        'sections': sections,
         'disabled': bool(getattr(app, 'disabled', False)),
         'hidden': bool(getattr(app, 'hidden', False))
     }
@@ -68,7 +56,6 @@ class YubiAdmin(object):
     @wsgify
     def __call__(self, request):
         module_name = request.path_info_pop()
-        section_name = request.path_info_pop()
 
         apps_data = OrderedDict()
         for app in apps:
@@ -87,27 +74,16 @@ class YubiAdmin(object):
         if module['disabled']:
             raise exc.HTTPNotFound
 
-        if not section_name:
-            section_name = module['sections'][0]['name']
-            raise exc.HTTPSeeOther(location=request.path + '/' + section_name)
-
-        if not hasattr(app, section_name):
-            raise exc.HTTPNotFound
-
-        section = next((section for section in module['sections']
-                       if section['name'] == section_name), None)
-
-        resp = getattr(app, section_name)(request)
-        if isinstance(resp, Response):
-            return resp
-
-        return render(
-            'app_base',
+        request.environ['yubiadmin.response'] = render(
+            'content',
             modules=modules,
             module=module,
-            section=section,
-            title='YubiAdmin - %s - %s' % (module_name, section_name),
-            page=resp
+            title='YubiAdmin - %s' % module_name
         )
+
+        resp = app(request)
+        if not resp:
+            return request.environ['yubiadmin.response']
+        return resp
 
 application = YubiAdmin()

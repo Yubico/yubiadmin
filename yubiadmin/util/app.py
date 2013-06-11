@@ -26,9 +26,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import os
+import sys
 import re
 from jinja2 import Environment, FileSystemLoader
-from webob import exc
+from webob import exc, Response
 from webob.dec import wsgify
 
 __all__ = [
@@ -53,7 +54,9 @@ class TemplateBinding(object):
                 self.data.update(val.data)
 
     def extend(self, sub_variable, sub_binding):
-        self.data.update(sub_binding.data)
+        if hasattr(sub_binding, 'data'):
+            self.data.update(sub_binding.data)
+            sub_binding.data = self.data
         self.data[sub_variable] = sub_binding
 
     @property
@@ -90,9 +93,43 @@ def populate_forms(forms, data):
 
 
 class App(object):
-    name = None
     sections = []
     priority = 50
+
+    @property
+    def name(self):
+        return sys.modules[self.__module__].__file__.split('/')[-1] \
+            .rsplit('.', 1)[0]
+
+    def __call__(self, request):
+        section_name = request.path_info_pop()
+
+        if not section_name:
+            section_name = self.sections[0]
+
+        if not hasattr(self, section_name):
+            raise exc.HTTPNotFound
+
+        sections = [{
+            'name': section,
+            'title': (getattr(self, section).__doc__ or section.capitalize()
+                      ).strip(),
+            'active': section == section_name,
+            'advanced': bool(getattr(getattr(self, section), 'advanced',
+                                     False))
+        } for section in self.sections]
+
+        request.environ['yubiadmin.response'].extend('content', render(
+            'app_base',
+            name=self.name,
+            sections=sections,
+            title='YubiAdmin - %s - %s' % (self.name, section_name)
+        ))
+
+        resp = getattr(self, section_name)(request)
+        if isinstance(resp, Response):
+            return resp
+        request.environ['yubiadmin.response'].extend('page', resp)
 
     def redirect(self, url):
         raise exc.HTTPSeeOther(location=url)

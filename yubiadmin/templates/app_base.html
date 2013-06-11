@@ -1,21 +1,18 @@
-{% extends "content.html" %}
-
 {% macro render_section(sect) %}
-<li {% if sect.name == section.name %}class="active"{% endif %}>
-	<a href="/{{ module.name }}/{{ sect.name }}">{{ sect.title }}</a>
+<li {% if sect.active %}class="active"{% endif %}>
+	<a href="/{{ name }}/{{ sect.name }}">{{ sect.title }}</a>
 </li>
 {% endmacro %}
 
-{% block content %}
 <div class="navbar">
 	<div class="navbar-inner">
 		<ul class="nav">
-			{% for sect in module.sections if not sect.advanced %}
+			{% for sect in sections if not sect.advanced %}
 				{{ render_section(sect) }}
 			{% endfor %}
 		</ul>
 		<ul class="nav pull-right">
-			{% for sect in module.sections if sect.advanced %}
+			{% for sect in sections if sect.advanced %}
 				{{ render_section(sect) }}
 			{% endfor %}
 		</ul>
@@ -31,4 +28,3 @@
 {% endfor %}
 
 {{ page }}
-{% endblock %}
