@@ -118,12 +118,13 @@ class SystemApp(App):
                 'info'
             )
 
+        _, time = run('date "+%a, %d %b %Y %H:%M"')
         _, result = run('uptime')
-        time, rest = [x.strip() for x in result.split('up', 1)]
+        rest = [x.strip() for x in result.split('up', 1)][1]
         parts = [x.strip() for x in rest.split(',')]
         uptime = parts[0] if not 'days' in parts[0] else '%s, %s' % \
             tuple(parts[:2])
-        yield panel('System', 'System time: %s<br />Uptime: %s' %
+        yield panel('System', 'Date: %s<br />Uptime: %s' %
                    (time, uptime), level='info')
 
     def general(self, request):

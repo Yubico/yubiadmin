@@ -44,6 +44,15 @@ class CustomRequestHandler(WSGIRequestHandler):
     def address_string(self):
         return str(self.client_address[0])
 
+
+class StaticPasswordValidator(object):
+    def __init__(self, username, password):
+        self.auth = base64.b64encode('%s:%s' % (username, password))
+
+    def __call__(self, auth):
+        return self.auth == auth
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="",
@@ -69,12 +78,13 @@ if __name__ == '__main__':
 
     static_app = DirectoryApp(static_dir)
 
+    validator = StaticPasswordValidator(args.username, args.password)
+
     @wsgify
     def with_static(request):
         if request.authorization:
             _, auth = request.authorization
-            if base64.b64decode(auth) == '%s:%s' % (args.username,
-                                                    args.password):
+            if validator(auth):
                 base = request.path_info_peek()
                 if base in STATIC_ASSETS:
                     return request.get_response(static_app)
