@@ -74,6 +74,11 @@ auth_config = FileConfig(
         ('allow_empty', python_handler('ALLOW_EMPTY_PASSWORDS', False)),
         ('security_level', python_handler('SECURITY_LEVEL', 1)),
         ('yubikey_id', python_handler('YUBIKEY_IDENTIFICATION', False)),
+        ('use_ldap', python_handler('USE_LDAP', False)),
+        ('ldap_server', python_handler('LDAP_SERVER', 'ldap://127.0.0.1')),
+        ('ldap_bind_dn', python_handler('LDAP_BIND_DN',
+                                        'uid={user.name},ou=People,dc=lan')),
+        ('ldap_auto_import', python_handler('LDAP_AUTO_IMPORT', True)),
         ('use_hsm', python_handler('USE_HSM', False)),
         ('hsm_device', python_handler('YHSM_DEVICE', 'yhsm://localhost:5348')),
         ('db_config', python_handler('DATABASE_CONFIGURATION',
@@ -153,6 +158,26 @@ class HSMForm(ConfigForm):
         description='Check this if you have a YubiHSM to be used by YubiAuth.'
     )
     hsm_device = TextField('YubiHSM device')
+
+
+class LDAPForm(ConfigForm):
+    legend = 'LDAP authentication'
+    descripting = 'Settings for authenticating users against an LDAP server.'
+    config = auth_config
+
+    use_ldap = BooleanField(
+        'Authenticate users against LDAP',
+        description='Check this to authenticate users passwords against LDAP.'
+    )
+    ldap_server = TextField('LDAP server URL')
+    ldap_bind_dn = TextField('Bind DN for user authentication')
+    ldap_auto_import = BooleanField(
+        'Automatically create users from LDAP',
+        description="""
+        Auto-create missing users in YubiAuth upon log in if the user is valid
+        in the LDAP database.
+        """
+    )
 
 
 class DatabaseForm(ConfigForm):
@@ -238,6 +263,7 @@ def using_default_client():
 
 
 class YubiAuthApp(App):
+
     """
     YubiAuth
 
@@ -265,7 +291,8 @@ class YubiAuthApp(App):
                         '/%s/validation' % self.name, 'danger')
 
     def general(self, request):
-        return self.render_forms(request, [SecurityForm(), HSMForm()],
+        return self.render_forms(request,
+                                 [SecurityForm(), LDAPForm(), HSMForm()],
                                  template='auth/general')
 
     def reload(self, request):
@@ -434,7 +461,7 @@ class YubiAuthUsers(CollectionApp):
             msg = 'YubiKey unassigned!'
         return self.render_forms(request,
                                  [SetPasswordForm(user.id),
-                                 AssignYubiKeyForm(user.id)],
+                                  AssignYubiKeyForm(user.id)],
                                  'auth/user', user=user.data,
                                  success_msg=msg)
 
