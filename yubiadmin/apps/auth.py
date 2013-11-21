@@ -48,7 +48,11 @@ __all__ = [
 
 log = logging.getLogger(__name__)
 
-YUBIAUTH_INSTALLED = imp.find_module('yubiauth')
+try:
+    imp.find_module('yubiauth')
+    YUBIAUTH_INSTALLED = True
+except ImportError:
+    YUBIAUTH_INSTALLED = False
 YubiAuth = None
 
 AUTH_CONFIG_FILE = '/etc/yubico/auth/yubiauth.conf'
