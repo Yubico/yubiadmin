@@ -29,7 +29,7 @@ import os
 import re
 import errno
 import csv
-import logging as log
+import logging
 from collections import MutableMapping, OrderedDict
 
 __all__ = [
@@ -42,6 +42,8 @@ __all__ = [
     'parse_block',
     'parse_value'
 ]
+
+log = logging.getLogger(__name__)
 
 PHP_BLOCKS = re.compile('(?ms)<\?php(.*?)\s*\?>')
 QUOTED_STR = re.compile(r'\s*[\'"](.*)[\'"]\s*')

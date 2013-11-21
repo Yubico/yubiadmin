@@ -27,6 +27,7 @@
 
 import os
 import requests
+import imp
 from wtforms import Form
 from wtforms.fields import (SelectField, TextField, BooleanField, IntegerField,
                             PasswordField)
@@ -39,17 +40,16 @@ from yubiadmin.util.config import (python_handler, python_list_handler,
                                    FileConfig)
 from yubiadmin.util.form import ConfigForm, FileForm, ListField
 from yubiadmin.apps.dashboard import panel
-import logging as log
-try:
-    from yubiauth import YubiAuth
-except:
-    YubiAuth = None
-User = None
+import logging
 
 __all__ = [
     'app'
 ]
 
+log = logging.getLogger(__name__)
+
+YUBIAUTH_INSTALLED = imp.find_module('yubiauth')
+YubiAuth = None
 
 AUTH_CONFIG_FILE = '/etc/yubico/auth/yubiauth.conf'
 YKVAL_SERVERS = [
@@ -150,24 +150,39 @@ class SecurityForm(ConfigForm):
 
 class HSMForm(ConfigForm):
     legend = 'YubiHSM'
-    description = 'Settings for the YubiHSM hardware device'
+    description = 'Settings for the YubiHSM hardware device.'
     config = auth_config
 
     use_hsm = BooleanField(
         'Use a YubiHSM',
-        description='Check this if you have a YubiHSM to be used by YubiAuth.'
+        description="""
+        Check this if you have a YubiHSM to be used by YubiAuth for more
+        secure local password validation.
+        """
     )
     hsm_device = TextField('YubiHSM device')
 
 
 class LDAPForm(ConfigForm):
     legend = 'LDAP authentication'
-    descripting = 'Settings for authenticating users against an LDAP server.'
+    description = """
+    Settings for authenticating users against an LDAP server. When LDAP
+    authentication is used only users that exist on the LDAP server will be
+    permitted to log in, and password validatoin will be delegated to the LDAP
+    server.
+    """
     config = auth_config
+    attrs = {
+        'ldap_server': {'class': 'input-xxlarge'},
+        'ldap_bind_dn': {'class': 'input-xxlarge'}
+    }
 
     use_ldap = BooleanField(
         'Authenticate users against LDAP',
-        description='Check this to authenticate users passwords against LDAP.'
+        description="""
+        Check this to authenticate users passwords externally against an LDAP
+        server.
+        """
     )
     ldap_server = TextField('LDAP server URL')
     ldap_bind_dn = TextField('Bind DN for user authentication')
@@ -262,6 +277,11 @@ def using_default_client():
         auth_config['client_secret'] == YKVAL_DEFAULT_SECRET
 
 
+def using_ldap():
+    auth_config.read()
+    return auth_config['use_ldap']
+
+
 class YubiAuthApp(App):
 
     """
@@ -271,7 +291,6 @@ class YubiAuthApp(App):
     """
 
     name = 'auth'
-    sections = ['general', 'database', 'validation', 'advanced']
     priority = 40
 
     @property
@@ -280,19 +299,19 @@ class YubiAuthApp(App):
 
     @property
     def sections(self):
-        if not YubiAuth:
-            return ['general', 'database', 'validation', 'advanced']
-        return ['general', 'database', 'validation', 'users', 'advanced']
+        base = ['general', 'database', 'password', 'otp']
+        if YUBIAUTH_INSTALLED:
+            return base + ['users', 'advanced']
+        return base + ['advanced']
 
     @property
     def dash_panels(self):
         if using_default_client():
             yield panel('YubiAuth', 'Using default YubiCloud client!',
-                        '/%s/validation' % self.name, 'danger')
+                        '/%s/otp' % self.name, 'danger')
 
     def general(self, request):
-        return self.render_forms(request,
-                                 [SecurityForm(), LDAPForm(), HSMForm()],
+        return self.render_forms(request, [SecurityForm()],
                                  template='auth/general')
 
     def reload(self, request):
@@ -302,9 +321,9 @@ class YubiAuthApp(App):
     def database(self, request):
         return self.render_forms(request, [DatabaseForm()])
 
-    def validation(self, request):
+    def otp(self, request):
         """
-        Validation Server(s)
+        OTP Validation
         """
         form = ValidationServerForm()
         resp = self.render_forms(request, [form])
@@ -320,6 +339,12 @@ class YubiAuthApp(App):
                 })
         return resp
 
+    def password(self, request):
+        """
+        Password Validation
+        """
+        return self.render_forms(request, [LDAPForm(), HSMForm()])
+
     def getapikey(self, request):
         return self.render_forms(request, [GetApiKeyForm()], success_msg=
                                  "API Key registered!")
@@ -333,9 +358,11 @@ class YubiAuthApp(App):
         """
         Manage Users
         """
-        global User
-        if User is None:
+        global YubiAuth, User
+        if YubiAuth is None:
+            from yubiauth import YubiAuth as _yubiauth
             from yubiauth.core.model import User as _user
+            YubiAuth = _yubiauth
             User = _user
 
         with YubiAuth() as auth:
@@ -386,6 +413,11 @@ class SetPasswordForm(Form):
                 user.set_password(self.password.data)
             self.password.data = None
             self.verify.data = None
+
+
+class SetPasswordDisabledForm(Form):
+    legend = 'Change Password'
+    description = 'Cannot change password when using LDAP for authentication.'
 
 
 class AssignYubiKeyForm(Form):
@@ -459,10 +491,10 @@ class YubiAuthUsers(CollectionApp):
             msg = 'YubiKey assigned!'
         elif request.params.get('unassign', None):
             msg = 'YubiKey unassigned!'
-        return self.render_forms(request,
-                                 [SetPasswordForm(user.id),
-                                  AssignYubiKeyForm(user.id)],
-                                 'auth/user', user=user.data,
+        pwd_form = SetPasswordDisabledForm() if using_ldap() else \
+            SetPasswordForm(user.id)
+        forms = [pwd_form, AssignYubiKeyForm(user.id)]
+        return self.render_forms(request, forms, 'auth/user', user=user.data,
                                  success_msg=msg)
 
 

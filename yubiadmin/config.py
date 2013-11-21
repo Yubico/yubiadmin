@@ -29,6 +29,8 @@ import sys
 import os
 import imp
 import errno
+import logging
+import logging.config
 from yubiadmin import default_settings
 
 __all__ = [
@@ -37,9 +39,11 @@ __all__ = [
 
 SETTINGS_FILE = os.getenv('YUBIADMIN_SETTINGS',
                           '/etc/yubico/admin/yubiadmin.conf')
+LOG_CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(SETTINGS_FILE)),
+                               'logging.conf')
 
 VALUES = {
-    #Web interface
+    # Web interface
     'USERNAME': 'user',
     'PASSWORD': 'pass',
     'INTERFACE': 'iface',
@@ -61,8 +65,16 @@ try:
     sys.dont_write_bytecode = True
     user_settings = imp.load_source('user_settings', SETTINGS_FILE)
     settings = parse(user_settings, settings)
-except IOError, e:
+except IOError as e:
     if not e.errno in [errno.ENOENT, errno.EACCES]:
         raise e
 finally:
     sys.dont_write_bytecode = dont_write_bytecode
+
+# Set up logging
+try:
+    logging.config.fileConfig(LOG_CONFIG_FILE)
+except:
+    logging.basicConfig(level=logging.INFO)
+    log = logging.getLogger(__name__)
+    log.exception("Unable to configure logging. Logging to console.")
