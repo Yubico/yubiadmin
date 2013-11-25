@@ -313,6 +313,10 @@ class YubiAuthApp(App):
         if using_default_client():
             yield panel('YubiAuth', 'Using default YubiCloud client!',
                         '/%s/otp' % self.name, 'danger')
+        if using_ldap():
+            yield panel('YubiAuth',
+                        'Using LDAP: %s' % auth_config['ldap_server'],
+                        '/%s/password' % self.name, 'info')
 
     def general(self, request):
         return self.render_forms(request, [SecurityForm()],
