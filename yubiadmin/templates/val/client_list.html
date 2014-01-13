@@ -3,3 +3,9 @@
 {{ table(cols, items, caption, next, prev, shown, total, item_name, selectable) }}
 
 <a href="/val/clients/create" class="btn btn-primary pull-right">Generate new API client</a>
+
+<script>
+$(document).ready(function() {
+	$('td[colspan=2]').addClass('selectable-text');
+});
+</script>

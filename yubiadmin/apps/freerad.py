@@ -140,7 +140,7 @@ class FreeRadius(App):
             FileForm(CLIENTS_CONFIG_FILE, 'clients.conf',
                      'Changes require the FreeRADIUS server to be restarted.',
                      lang='ini')
-        ], script='editor')
+        ], scripts=['editor'])
 
 
 CLIENT = re.compile('client\s+(.+)\s+{')

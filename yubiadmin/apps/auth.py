@@ -360,7 +360,7 @@ class YubiAuthApp(App):
     def advanced(self, request):
         return self.render_forms(request, [
             FileForm(AUTH_CONFIG_FILE, 'Configuration', lang='python')
-        ], script='editor')
+        ], scripts=['editor'])
 
     def users(self, request):
         """

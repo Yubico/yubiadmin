@@ -171,7 +171,7 @@ class CollectionApp(App):
     item_name = 'Items'
     columns = []
     template = 'table'
-    script = 'table'
+    scripts = ['table']
     selectable = True
     max_limit = 100
 
@@ -218,7 +218,7 @@ class CollectionApp(App):
             next = None
 
         return render(
-            self.template, script=self.script, items=items, offset=offset,
+            self.template, scripts=self.scripts, items=items, offset=offset,
             limit=limit, total=total, shown='%d-%d' % shown, prev=prev,
             next=next, base_url=self.base_url, caption=self.caption,
             cols=self.columns, item_name=self.item_name,

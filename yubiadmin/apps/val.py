@@ -273,7 +273,7 @@ class YubikeyVal(App):
     def advanced(self, request):
         return self.render_forms(request, [
             FileForm(YKVAL_CONFIG_FILE, 'Configuration', lang='php')
-        ], script='editor')
+        ], scripts=['editor'])
 
     # Pulls the tab to the right:
     advanced.advanced = True
