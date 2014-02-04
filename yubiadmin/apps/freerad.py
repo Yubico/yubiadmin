@@ -97,7 +97,7 @@ class FreeRadius(App):
             password = form.password.data
             secret = form.client_secret.data
 
-            cmd = 'radtest %s %s localhost 0 %s' % (username, password, secret)
+            cmd = 'radtest "%s" "%s" localhost 0 "%s"' % (username, password, secret)
             status, output = run(cmd)
             alert = {'title': 'Command: %s' % cmd}
             alert['message'] = '<pre style="white-space: pre-wrap;">%s</pre>' \
