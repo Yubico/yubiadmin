@@ -230,7 +230,7 @@ class ValidationServerForm(ConfigForm):
     client_id = IntegerField('Client ID', [NumberRange(0)])
     client_secret = TextField('API key')
     server_list = ListField(
-        'Validation Server URLs', [URL()],
+        'Validation Server URLs', [URL(require_tld=False)],
         description="""
         List of URLs to YubiKey validation servers.
         Example: <code>http://example.com/wsapi/2.0/verify</code>

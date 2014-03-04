@@ -168,7 +168,7 @@ class SyncPoolForm(ConfigForm):
     }
 
     sync_pool = ListField(
-        'Sync Pool URLs', [URL()],
+        'Sync Pool URLs', [URL(require_tld=False)],
         description="""
         List of URLs to other servers in the sync pool.
         Example: <code>http://example.com/wsapi/2.0/sync</code>
@@ -193,7 +193,7 @@ class KSMForm(ConfigForm):
     attrs = {'ksm_urls': {'rows': 5, 'class': 'input-xxlarge'}}
 
     ksm_urls = ListField(
-        'KSM URLs', [URL()],
+        'KSM URLs', [URL(require_tld=False)],
         description="""
         List of URLs to KSMs.
         The URLs must be fully qualified, i.e., contain the OTP itself.
