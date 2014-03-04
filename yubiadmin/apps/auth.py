@@ -28,6 +28,7 @@
 import os
 import requests
 import imp
+from webob import exc
 from wtforms import Form
 from wtforms.fields import (SelectField, TextField, BooleanField, IntegerField,
                             PasswordField)
@@ -375,7 +376,12 @@ class YubiAuthApp(App):
 
         with YubiAuth() as auth:
             app = YubiAuthUsers(auth)
-            return app(request).prerendered
+            try:
+                return app(request).prerendered
+            except (exc.HTTPOk, exc.HTTPRedirection) as e:
+                # Ensure auth is closed on 200-300 codes.
+                exception = e
+        raise exception
 
     # Pulls the tab to the right:
     advanced.advanced = True
