@@ -1,3 +1,12 @@
+* Version 0.1.7 (released 2014-04-16)
+
+  * Fixed YubiAuth user deletion bug.
+
+  * Fixed bug with URL fields not working with "localhost".
+
+  * Now handles usernames/passwords/secrets with spaces in RADIUS test without
+    manual quoting.
+
 * Version 0.1.6 (released 2013-11-22)
 
   * Added LDAP settings to YubiAuth.
